@@ -1,6 +1,7 @@
 'use client'
 import { CalendarDays, Download, Info, Pause, Play, RadioTower, RefreshCw } from 'lucide-react'
 import { format } from 'date-fns'
+import { useI18n, type Lang } from '@/lib/i18n'
 
 type Props = {
   date: Date
@@ -28,7 +29,21 @@ function Switch({ label, checked, onChange }: { label: string; checked: boolean;
   )
 }
 
+function LanguageToggle() {
+  const { lang, setLang } = useI18n()
+  return (
+    <div className="flex items-center rounded-lg border border-white/10 bg-white/5 p-0.5">
+      {(['es', 'en'] as Lang[]).map((l) => (
+        <button key={l} type="button" onClick={() => setLang(l)} aria-pressed={lang === l} className={`rounded-md px-2 py-1 text-[10px] font-bold uppercase tracking-wide transition-colors ${lang === l ? 'bg-cyan-500 text-white' : 'text-slate-400 hover:text-white'}`}>
+          {l.toUpperCase()}
+        </button>
+      ))}
+    </div>
+  )
+}
+
 export function DateControls(props: Props) {
+  const { t } = useI18n()
   return (
     <header className="flex flex-wrap items-center gap-x-5 gap-y-3 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 backdrop-blur-xl">
       <div className="flex items-center gap-3">
@@ -36,30 +51,31 @@ export function DateControls(props: Props) {
           <RadioTower className="size-5" />
         </div>
         <div>
-          <p className="text-sm font-bold leading-tight text-white">Geophysical Monitor</p>
-          <p className="font-mono text-[10px] uppercase tracking-widest text-slate-500">Energía entrante · UTC / 24 h</p>
+          <p className="text-sm font-bold leading-tight text-white">{t('brand')}</p>
+          <p className="font-mono text-[10px] uppercase tracking-widest text-slate-500">{t('subtitle')}</p>
         </div>
       </div>
 
       <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-1.5">
         <CalendarDays className="size-4 text-cyan-300" />
         <input aria-label="Fecha seleccionada" type="date" value={format(props.date, 'yyyy-MM-dd')} onChange={(event) => props.onDate(new Date(`${event.target.value}T00:00:00Z`))} className="bg-transparent font-mono text-xs text-white [color-scheme:dark]" />
-        <button type="button" onClick={() => props.onDate(new Date(Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), new Date().getUTCDate())))} className="rounded-lg border border-white/10 bg-white/5 px-2.5 py-1 text-xs font-semibold text-slate-200 hover:bg-white/10">Hoy</button>
+        <button type="button" onClick={() => props.onDate(new Date(Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), new Date().getUTCDate())))} className="rounded-lg border border-white/10 bg-white/5 px-2.5 py-1 text-xs font-semibold text-slate-200 hover:bg-white/10">{t('today')}</button>
       </div>
 
       <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
-        <Switch label="Live" checked={props.live} onChange={props.onLive} />
-        <Switch label="Solo cruces" checked={props.crossingsOnly} onChange={props.onCrossingsOnly} />
-        <Switch label="Antípoda" checked={props.showAntipode} onChange={props.onAntipode} />
-        <Switch label={props.animate ? 'Pausar luna' : 'Animar luna'} checked={props.animate} onChange={props.onAnimate} />
+        <Switch label={t('live')} checked={props.live} onChange={props.onLive} />
+        <Switch label={t('onlyCrossings')} checked={props.crossingsOnly} onChange={props.onCrossingsOnly} />
+        <Switch label={t('antipode')} checked={props.showAntipode} onChange={props.onAntipode} />
+        <Switch label={props.animate ? t('pauseMoon') : t('animateMoon')} checked={props.animate} onChange={props.onAnimate} />
       </div>
 
       <div className="ml-auto flex items-center gap-2">
+        <LanguageToggle />
         <button type="button" onClick={props.onInfo} className="flex h-9 items-center gap-1.5 rounded-xl border border-white/10 bg-white/5 px-3 text-xs font-semibold text-slate-200 hover:bg-white/10">
-          <Info className="size-4" /> Cómo funciona
+          <Info className="size-4" /> {t('howItWorks')}
         </button>
         <button type="button" onClick={props.onExport} className="flex h-9 items-center gap-1.5 rounded-xl px-4 text-xs font-semibold text-white shadow-lg shadow-cyan-500/20 hover:opacity-90" style={{ background: 'linear-gradient(90deg, #06b6d4, #6366f1)' }}>
-          <Download className="size-4" /> Exportar imagen
+          <Download className="size-4" /> {t('exportImage')}
         </button>
         <span className="font-mono text-[10px] text-slate-500">{props.live ? <RefreshCw className="inline size-4 animate-spin" /> : props.animate ? <Play className="inline size-4 text-emerald-400" /> : <Pause className="inline size-4" />}</span>
       </div>

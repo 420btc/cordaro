@@ -8,38 +8,44 @@ import { CordaroMap } from '@/components/CordaroMap'
 import { DateControls } from '@/components/DateControls'
 import { dateKey, type DayData, type MoonPosition, type PlateCrossing } from '@/lib/types'
 import { generateDayData } from '@/lib/dailyData'
-import { moonIllumination, moonPhaseName } from '@/lib/astronomy'
+import { moonIllumination, moonPhaseKey } from '@/lib/astronomy'
+import { I18nProvider, useI18n, type TFunction } from '@/lib/i18n'
 
 const MiniMap = dynamic(() => import('@/components/MiniMap').then((m) => m.MiniMap), { ssr: false, loading: () => <div className="h-full w-full bg-[#0b1220]" /> })
 
-function formatDuration(ms: number): string {
+function formatDuration(ms: number, t: TFunction): string {
   const totalSec = Math.max(0, Math.floor(ms / 1000))
   const d = Math.floor(totalSec / 86400)
   const h = Math.floor((totalSec % 86400) / 3600)
   const m = Math.floor((totalSec % 3600) / 60)
   const s = totalSec % 60
-  if (d >= 2) return `${d} d ${h} h`
+  if (d >= 2) return `${d} ${t('unit.d')} ${h} ${t('unit.h')}`
   const totalH = Math.floor(totalSec / 3600)
-  if (totalH > 0) return `${totalH} h ${m} min ${s} s`
-  if (m > 0) return `${m} min ${s} s`
-  return `${s} s`
+  if (totalH > 0) return `${totalH} ${t('unit.h')} ${m} ${t('unit.min')} ${s} ${t('unit.s')}`
+  if (m > 0) return `${m} ${t('unit.min')} ${s} ${t('unit.s')}`
+  return `${s} ${t('unit.s')}`
 }
 
-function formatCountdown(timestamp: number, now: number): { label: string; tone: 'now' | 'soon' | 'past' } {
+function formatCountdown(timestamp: number, now: number, t: TFunction): { label: string; tone: 'now' | 'soon' | 'past' } {
   const diff = timestamp - now
   const abs = Math.abs(diff)
-  if (abs < 30000) return { label: 'Ahora', tone: 'now' }
-  const prefix = diff > 0 ? 'en' : 'hace'
-  return { label: `${prefix} ${formatDuration(abs)}`, tone: diff > 0 ? 'soon' : 'past' }
+  if (abs < 30000) return { label: t('countdown.now'), tone: 'now' }
+  const prefix = diff > 0 ? t('countdown.in') : t('countdown.ago')
+  return { label: `${prefix} ${formatDuration(abs, t)}`, tone: diff > 0 ? 'soon' : 'past' }
 }
 
-function formatCoord(latitude: number, longitude: number): string {
-  const latDir = latitude >= 0 ? 'Norte' : 'Sur'
-  const lonDir = longitude >= 0 ? 'Este' : 'Oeste'
-  return `Lat ${Math.abs(latitude).toFixed(0)}° ${latDir} · Lon ${Math.abs(longitude).toFixed(0)}° ${lonDir}`
+function formatCoord(latitude: number, longitude: number, t: TFunction): string {
+  const latDir = latitude >= 0 ? t('coord.north') : t('coord.south')
+  const lonDir = longitude >= 0 ? t('coord.east') : t('coord.west')
+  return `${t('coord.lat')} ${Math.abs(latitude).toFixed(0)}° ${latDir} · ${t('coord.lon')} ${Math.abs(longitude).toFixed(0)}° ${lonDir}`
 }
 
 export default function Page() {
+  return <I18nProvider><Dashboard /></I18nProvider>
+}
+
+function Dashboard() {
+  const { t } = useI18n()
   const [date, setDate] = useState(() => { const now = new Date(); return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())) })
   const [live, setLive] = useState(false)
   const [animate, setAnimate] = useState(false)
@@ -79,7 +85,7 @@ export default function Page() {
           <CordaroMap positions={data.positions} sunPositions={data.sunPositions} crossings={data.crossings} showAntipode={showAntipode} animate={animate} />
           <footer className="flex items-start gap-2 px-1 pb-1 text-[11px] leading-relaxed text-slate-500">
             <AlertTriangle className="mt-0.5 size-3.5 shrink-0 text-amber-400" />
-            <span>Posiciones lunares y solares calculadas con astronomy-engine; las anomalías son una simulación visual del método Cordaro y los sismos son datos de ejemplo.</span>
+            <span>{t('footer.disclaimer')}</span>
           </footer>
         </div>
       </div>
@@ -90,14 +96,16 @@ export default function Page() {
 }
 
 function SummaryStrip({ data, summary }: { data: DayData; summary: { mid: MoonPosition; peak: { value: number; time: string }; maxMag: number } }) {
+  const { t, lang } = useI18n()
   const illumination = moonIllumination(summary.mid.phase)
+  const phaseName = { new: t('phase.new'), waxing: t('phase.waxing'), full: t('phase.full'), waning: t('phase.waning') }[moonPhaseKey(summary.mid.phase)]
   const items = [
-    { label: 'Fase lunar', value: `${Math.round(illumination * 100)}%`, sub: moonPhaseName(summary.mid.phase), Icon: Moon, tint: 'text-amber-300' },
-    { label: 'Ángulo Luna–Sol', value: `${summary.mid.sunAngle.toFixed(0)}°`, sub: 'separación angular', Icon: Sun, tint: 'text-orange-300' },
-    { label: 'Distancia lunar', value: `${Math.round(summary.mid.distanceKm).toLocaleString('es-ES')} km`, sub: 'centro a centro', Icon: Ruler, tint: 'text-cyan-300' },
-    { label: 'Cruces de placas', value: `${data.crossings.length}`, sub: 'en 24 horas', Icon: Layers, tint: 'text-rose-300' },
-    { label: 'Pico de energía', value: summary.peak.value.toFixed(1), sub: `de 10 · ${summary.peak.time} UTC`, Icon: Zap, tint: 'text-violet-300' },
-    { label: 'Sismos (≥ M3)', value: `${data.earthquakes.length}`, sub: `máx M ${summary.maxMag.toFixed(1)}`, Icon: Globe2, tint: 'text-emerald-300' },
+    { label: t('kpi.phase'), value: `${Math.round(illumination * 100)}%`, sub: phaseName, Icon: Moon, tint: 'text-amber-300' },
+    { label: t('kpi.angle'), value: `${summary.mid.sunAngle.toFixed(0)}°`, sub: t('kpi.angleSub'), Icon: Sun, tint: 'text-orange-300' },
+    { label: t('kpi.distance'), value: `${Math.round(summary.mid.distanceKm).toLocaleString(lang === 'es' ? 'es-ES' : 'en-US')} km`, sub: t('kpi.distanceSub'), Icon: Ruler, tint: 'text-cyan-300' },
+    { label: t('kpi.crossings'), value: `${data.crossings.length}`, sub: t('kpi.crossingsSub'), Icon: Layers, tint: 'text-rose-300' },
+    { label: t('kpi.peak'), value: summary.peak.value.toFixed(1), sub: `${t('kpi.peakOf')} · ${summary.peak.time} UTC`, Icon: Zap, tint: 'text-violet-300' },
+    { label: t('kpi.quakes'), value: `${data.earthquakes.length}`, sub: `${t('kpi.quakesSub')} ${summary.maxMag.toFixed(1)}`, Icon: Globe2, tint: 'text-emerald-300' },
   ]
   return (
     <section aria-label="Resumen del día" className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
@@ -116,6 +124,7 @@ function SummaryStrip({ data, summary }: { data: DayData; summary: { mid: MoonPo
 }
 
 function CrossingsTimeline({ crossings }: { crossings: PlateCrossing[] }) {
+  const { t } = useI18n()
   const [now, setNow] = useState(() => Date.now())
   useEffect(() => { const timer = window.setInterval(() => setNow(Date.now()), 1000); return () => window.clearInterval(timer) }, [])
 
@@ -123,16 +132,16 @@ function CrossingsTimeline({ crossings }: { crossings: PlateCrossing[] }) {
   const nextId = sorted.find((crossing) => crossing.timestamp > now)?.id
 
   return (
-    <section aria-label="Cruces de placas de hoy" className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 backdrop-blur-xl">
+    <section aria-label={t('crossings.title')} className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 backdrop-blur-xl">
       <header className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h2 className="flex items-center gap-2 text-base font-semibold text-white"><Clock className="size-4 text-cyan-300" /> Cruces de placas de hoy</h2>
-          <p className="text-xs text-slate-400">Dónde y cuándo la Luna (o su antípoda) cruza una frontera tectónica</p>
+          <h2 className="flex items-center gap-2 text-base font-semibold text-white"><Clock className="size-4 text-cyan-300" /> {t('crossings.title')}</h2>
+          <p className="text-xs text-slate-400">{t('crossings.subtitle')}</p>
         </div>
-        <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-slate-200">{crossings.length} cruces</span>
+        <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-slate-200">{t('crossings.count', { n: crossings.length })}</span>
       </header>
       {sorted.length === 0 ? (
-        <p className="text-sm text-slate-400">Sin cruces detectados este día.</p>
+        <p className="text-sm text-slate-400">{t('crossings.empty')}</p>
       ) : (
         <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4">
           {sorted.map((crossing) => <CrossingCard key={crossing.id} crossing={crossing} now={now} isNext={crossing.id === nextId} />)}
@@ -143,9 +152,10 @@ function CrossingsTimeline({ crossings }: { crossings: PlateCrossing[] }) {
 }
 
 function CrossingCard({ crossing, now, isNext }: { crossing: PlateCrossing; now: number; isNext: boolean }) {
+  const { t } = useI18n()
   const isMoon = crossing.type === 'moon'
   const color = isMoon ? '#f43f5e' : '#3b82f6'
-  const { label, tone } = formatCountdown(crossing.timestamp, now)
+  const { label, tone } = formatCountdown(crossing.timestamp, now, t)
   const toneClass = tone === 'now' ? 'bg-amber-500/20 text-amber-200' : tone === 'soon' ? 'bg-cyan-500/15 text-cyan-200' : 'bg-white/10 text-slate-400'
   return (
     <div className={`overflow-hidden rounded-2xl border bg-white/[0.02] ${isNext ? 'border-cyan-400/60 ring-1 ring-cyan-400/40' : 'border-white/10'}`}>
@@ -157,10 +167,10 @@ function CrossingCard({ crossing, now, isNext }: { crossing: PlateCrossing; now:
           <span className="font-mono text-lg font-bold text-white">{crossing.time}</span>
           <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${toneClass}`}>{label}</span>
         </div>
-        {isNext && <p className="mt-1 text-[10px] font-bold uppercase tracking-wider text-cyan-300">Próximo cruce</p>}
-        <p className="mt-1 text-sm font-semibold text-slate-100">{isMoon ? 'La Luna cruza' : 'La antípoda cruza'}</p>
+        {isNext && <p className="mt-1 text-[10px] font-bold uppercase tracking-wider text-cyan-300">{t('crossing.next')}</p>}
+        <p className="mt-1 text-sm font-semibold text-slate-100">{isMoon ? t('crossing.moonCrosses') : t('crossing.antipodeCrosses')}</p>
         <p className="text-xs text-slate-300">{crossing.plateA}</p>
-        <p className="mt-2 font-mono text-[10px] text-slate-500">{formatCoord(crossing.latitude, crossing.longitude)}</p>
+        <p className="mt-2 font-mono text-[10px] text-slate-500">{formatCoord(crossing.latitude, crossing.longitude, t)}</p>
       </div>
     </div>
   )
@@ -176,50 +186,51 @@ function InfoSection({ icon: Icon, tint, title, children }: { icon: any; tint: s
 }
 
 function InfoModal({ onClose }: { onClose: () => void }) {
+  const { t } = useI18n()
   return (
     <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-sm" onClick={onClose}>
       <div className="no-scrollbar flex max-h-[85vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#0b1220] shadow-2xl" onClick={(event) => event.stopPropagation()}>
         <header className="flex items-center justify-between border-b border-white/10 px-5 py-4">
           <div>
-            <p className="font-mono text-[10px] uppercase tracking-widest text-slate-500">Guía rápida</p>
-            <h2 className="text-lg font-semibold text-white">¿Qué estoy viendo?</h2>
+            <p className="font-mono text-[10px] uppercase tracking-widest text-slate-500">{t('info.eyebrow')}</p>
+            <h2 className="text-lg font-semibold text-white">{t('info.title')}</h2>
           </div>
-          <button type="button" onClick={onClose} aria-label="Cerrar" className="rounded-lg p-1.5 text-slate-400 hover:bg-white/10 hover:text-white"><X className="size-5" /></button>
+          <button type="button" onClick={onClose} aria-label={t('info.close')} className="rounded-lg p-1.5 text-slate-400 hover:bg-white/10 hover:text-white"><X className="size-5" /></button>
         </header>
 
         <div className="no-scrollbar flex-1 space-y-4 overflow-y-auto px-5 py-4">
-          <InfoSection icon={Moon} tint="text-amber-300" title="La Luna y el Sol">
-            <p>La Luna tarda unos 28 días en dar una vuelta a la Tierra. Según se alinea con el Sol, vemos sus fases: nueva, creciente, llena y menguante.</p>
-            <p className="text-slate-400">Cuando Luna, Tierra y Sol se alinean (luna nueva o llena), su atracción conjunta tira con más fuerza de la corteza terrestre.</p>
+          <InfoSection icon={Moon} tint="text-amber-300" title={t('info.s1.title')}>
+            <p>{t('info.s1.p1')}</p>
+            <p className="text-slate-400">{t('info.s1.p2')}</p>
           </InfoSection>
 
-          <InfoSection icon={Globe2} tint="text-emerald-300" title="Las placas tectónicas">
-            <p>La superficie de la Tierra está partida en grandes piezas que se mueven muy despacio: las placas tectónicas.</p>
-            <p className="text-slate-400">Donde dos placas se tocan hay una frontera (en rojo en el mapa). Ahí es donde ocurren la mayoría de los terremotos.</p>
+          <InfoSection icon={Globe2} tint="text-emerald-300" title={t('info.s2.title')}>
+            <p>{t('info.s2.p1')}</p>
+            <p className="text-slate-400">{t('info.s2.p2')}</p>
           </InfoSection>
 
-          <InfoSection icon={Layers} tint="text-rose-300" title="¿Qué es un cruce?">
-            <p>Un cruce es el momento exacto en que la Luna (o su punto opuesto, la antípoda) pasa justo por encima de una frontera de placas.</p>
-            <p className="text-slate-400">Técnico: el método Cordaro relaciona esa posición lunar con las anomalías magnéticas y abre una ventana de riesgo de unas horas.</p>
+          <InfoSection icon={Layers} tint="text-rose-300" title={t('info.s3.title')}>
+            <p>{t('info.s3.p1')}</p>
+            <p className="text-slate-400">{t('info.s3.p2')}</p>
           </InfoSection>
 
-          <InfoSection icon={Zap} tint="text-violet-300" title="La energía entrante y el gráfico">
-            <p>El gráfico muestra la energía entrante estimada durante el día. Cuanto más alta, mayor probabilidad relativa de sismos en esa franja.</p>
-            <p className="text-slate-400">Las barras de colores son niveles de anomalía magnética (rojo = mayor intensidad). La línea azul es la tasa global y la línea naranja marca el nivel 5 de alerta.</p>
+          <InfoSection icon={Zap} tint="text-violet-300" title={t('info.s4.title')}>
+            <p>{t('info.s4.p1')}</p>
+            <p className="text-slate-400">{t('info.s4.p2')}</p>
           </InfoSection>
 
-          <InfoSection icon={Compass} tint="text-cyan-300" title="Cómo leer el mapa">
-            <p><span className="text-amber-300">●</span> Luna · <span className="text-orange-400">●</span> Sol · <span className="text-blue-400">●</span> Antípoda · <span className="text-rose-400">—</span> frontera de placas.</p>
-            <p className="text-slate-400">Las líneas discontinuas son las trayectorias de la Luna y el Sol a lo largo del día. Los puntos blancos con la hora son los cruces.</p>
+          <InfoSection icon={Compass} tint="text-cyan-300" title={t('info.s5.title')}>
+            <p>{t('info.s5.p1')}</p>
+            <p className="text-slate-400">{t('info.s5.p2')}</p>
           </InfoSection>
 
-          <InfoSection icon={Clock} tint="text-amber-200" title="La cuenta atrás">
-            <p>Cada tarjeta de cruce indica cuánto falta (en horas, minutos y segundos) o cuánto hace que ocurrió. El próximo cruce se resalta en azul.</p>
+          <InfoSection icon={Clock} tint="text-amber-200" title={t('info.s6.title')}>
+            <p>{t('info.s6.p1')}</p>
           </InfoSection>
 
-          <InfoSection icon={AlertTriangle} tint="text-amber-400" title="Datos y límites">
-            <p>Las posiciones de la Luna y el Sol son reales (calculadas con astronomy-engine).</p>
-            <p className="text-slate-400">Las anomalías magnéticas son una simulación visual del método y los sismos son datos de ejemplo. No es una predicción sísmica oficial.</p>
+          <InfoSection icon={AlertTriangle} tint="text-amber-400" title={t('info.s7.title')}>
+            <p>{t('info.s7.p1')}</p>
+            <p className="text-slate-400">{t('info.s7.p2')}</p>
           </InfoSection>
         </div>
       </div>

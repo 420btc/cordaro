@@ -58,10 +58,10 @@ export function moonIllumination(phase01: number): number {
   return (1 - Math.cos(phase01 * Math.PI * 2)) / 2
 }
 
-export function moonPhaseName(phase01: number): string {
+export function moonPhaseKey(phase01: number): 'new' | 'waxing' | 'full' | 'waning' {
   const angle = phase01 * 360
-  if (angle < 45 || angle >= 315) return 'Luna nueva'
-  if (angle < 135) return 'Creciente'
-  if (angle < 225) return 'Llena'
-  return 'Menguante'
+  if (angle < 45 || angle >= 315) return 'new'
+  if (angle < 135) return 'waxing'
+  if (angle < 225) return 'full'
+  return 'waning'
 }
