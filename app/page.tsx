@@ -2,14 +2,16 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import dynamic from 'next/dynamic'
 import { toPng } from 'html-to-image'
-import { AlertTriangle, Clock, Compass, Globe2, Layers, Moon, Ruler, Sun, X, Zap } from 'lucide-react'
+import { AlertTriangle, CalendarDays, Clock, Compass, Globe2, Layers, Moon, Ruler, Sun, X, Zap } from 'lucide-react'
 import { CordaroChart } from '@/components/CordaroChart'
 import { CordaroMap } from '@/components/CordaroMap'
 import { DateControls } from '@/components/DateControls'
-import { dateKey, type DayData, type MoonPosition, type PlateCrossing } from '@/lib/types'
-import { generateDayData } from '@/lib/dailyData'
+import { dateKey, generateAnomalies, type DayData, type Earthquake, type MoonPosition, type PlateCrossing } from '@/lib/types'
+import { generateCelestialData } from '@/lib/dailyData'
+import { fetchEarthquakes } from '@/lib/earthquakes'
 import { moonIllumination, moonPhaseKey } from '@/lib/astronomy'
 import { I18nProvider, useI18n, type TFunction } from '@/lib/i18n'
+import { format } from 'date-fns'
 
 const MiniMap = dynamic(() => import('@/components/MiniMap').then((m) => m.MiniMap), { ssr: false, loading: () => <div className="h-full w-full bg-[#0b1220]" /> })
 
@@ -54,13 +56,17 @@ function Dashboard() {
   const [showInfo, setShowInfo] = useState(false)
   const captureRef = useRef<HTMLDivElement>(null)
 
-  const data = useMemo(() => generateDayData(date), [date])
+  const celestial = useMemo(() => generateCelestialData(date), [date])
+  const [earthquakes, setEarthquakes] = useState<Earthquake[]>([])
+  useEffect(() => { let active = true; fetchEarthquakes(date).then((quakes) => { if (active) setEarthquakes(quakes) }); return () => { active = false } }, [date])
+  const anomalies = useMemo(() => generateAnomalies(date, celestial.crossings, earthquakes), [date, celestial.crossings, earthquakes])
+  const data = useMemo<DayData>(() => ({ positions: celestial.positions, sunPositions: celestial.sunPositions, crossings: celestial.crossings, earthquakes, anomalies }), [celestial, earthquakes, anomalies])
 
   useEffect(() => { if (!live) return; const timer = window.setInterval(() => setDate(new Date(dateKey(new Date()) + 'T00:00:00Z')), 300000); return () => window.clearInterval(timer) }, [live])
 
   const summary = useMemo(() => {
     const mid = data.positions[Math.floor(data.positions.length / 2)] ?? data.positions[0]
-    const peak = data.anomalies.reduce((acc, row) => (row.globalRate > acc.value ? { value: row.globalRate, time: row.time } : acc), { value: 0, time: '' })
+    const peak = data.anomalies.reduce((acc, row) => (row.energy > acc.value ? { value: row.energy, time: row.time } : acc), { value: 0, time: '' })
     const maxMag = data.earthquakes.reduce((acc, q) => Math.max(acc, q.magnitude), 0)
     return { mid, peak, maxMag }
   }, [data])
@@ -78,7 +84,7 @@ function Dashboard() {
       <div className="relative mx-auto flex min-h-screen max-w-[1800px] flex-col gap-4 p-4">
         <DateControls date={date} live={live} animate={animate} crossingsOnly={crossingsOnly} showAntipode={showAntipode} onDate={setDate} onLive={setLive} onAnimate={setAnimate} onCrossingsOnly={setCrossingsOnly} onAntipode={setShowAntipode} onExport={exportImage} onInfo={() => setShowInfo(true)} />
         <SummaryStrip data={data} summary={summary} />
-        <CrossingsTimeline crossings={data.crossings} />
+        <CrossingsTimeline crossings={data.crossings} date={date} />
 
         <div ref={captureRef} style={{ backgroundColor: '#060a18', backgroundImage: 'radial-gradient(1100px 520px at 12% 0%, rgba(99,102,241,0.16), transparent 60%), radial-gradient(900px 480px at 88% 18%, rgba(34,211,238,0.10), transparent 55%)' }} className="flex flex-col gap-4">
           <CordaroChart data={data.anomalies} crossings={data.crossings} earthquakes={data.earthquakes} crossingsOnly={crossingsOnly} date={date} />
@@ -123,35 +129,39 @@ function SummaryStrip({ data, summary }: { data: DayData; summary: { mid: MoonPo
   )
 }
 
-function CrossingsTimeline({ crossings }: { crossings: PlateCrossing[] }) {
+function CrossingsTimeline({ crossings, date }: { crossings: PlateCrossing[]; date: Date }) {
   const { t } = useI18n()
+  const isToday = dateKey(date) === dateKey(new Date())
   const [now, setNow] = useState(() => Date.now())
-  useEffect(() => { const timer = window.setInterval(() => setNow(Date.now()), 1000); return () => window.clearInterval(timer) }, [])
+  useEffect(() => { if (!isToday) return; const timer = window.setInterval(() => setNow(Date.now()), 1000); return () => window.clearInterval(timer) }, [isToday])
 
   const sorted = useMemo(() => [...crossings].sort((a, b) => a.timestamp - b.timestamp), [crossings])
-  const nextId = sorted.find((crossing) => crossing.timestamp > now)?.id
+  const nextId = isToday ? sorted.find((crossing) => crossing.timestamp > now)?.id : undefined
 
   return (
-    <section aria-label={t('crossings.title')} className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 backdrop-blur-xl">
+    <section aria-label={t('crossings.title')} className="rounded-2xl border border-sky-400/20 bg-sky-500/10 p-4 backdrop-blur-xl">
       <header className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <div>
           <h2 className="flex items-center gap-2 text-base font-semibold text-white"><Clock className="size-4 text-cyan-300" /> {t('crossings.title')}</h2>
           <p className="text-xs text-slate-400">{t('crossings.subtitle')}</p>
         </div>
-        <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-slate-200">{t('crossings.count', { n: crossings.length })}</span>
+        <div className="flex items-center gap-2">
+          <span className="flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-slate-200"><CalendarDays className="size-3.5 text-cyan-300" /> {format(date, 'dd/MM/yyyy')}</span>
+          <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-slate-200">{t('crossings.count', { n: crossings.length })}</span>
+        </div>
       </header>
       {sorted.length === 0 ? (
         <p className="text-sm text-slate-400">{t('crossings.empty')}</p>
       ) : (
         <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4">
-          {sorted.map((crossing) => <CrossingCard key={crossing.id} crossing={crossing} now={now} isNext={crossing.id === nextId} />)}
+          {sorted.map((crossing) => <CrossingCard key={crossing.id} crossing={crossing} now={now} isNext={crossing.id === nextId} showCountdown={isToday} />)}
         </div>
       )}
     </section>
   )
 }
 
-function CrossingCard({ crossing, now, isNext }: { crossing: PlateCrossing; now: number; isNext: boolean }) {
+function CrossingCard({ crossing, now, isNext, showCountdown }: { crossing: PlateCrossing; now: number; isNext: boolean; showCountdown: boolean }) {
   const { t } = useI18n()
   const isMoon = crossing.type === 'moon'
   const color = isMoon ? '#f43f5e' : '#3b82f6'
@@ -165,9 +175,9 @@ function CrossingCard({ crossing, now, isNext }: { crossing: PlateCrossing; now:
       <div className="p-3">
         <div className="flex items-center justify-between gap-2">
           <span className="font-mono text-lg font-bold text-white">{crossing.time}</span>
-          <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${toneClass}`}>{label}</span>
+          {showCountdown && <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${toneClass}`}>{label}</span>}
         </div>
-        {isNext && <p className="mt-1 text-[10px] font-bold uppercase tracking-wider text-cyan-300">{t('crossing.next')}</p>}
+        {showCountdown && isNext && <p className="mt-1 text-[10px] font-bold uppercase tracking-wider text-cyan-300">{t('crossing.next')}</p>}
         <p className="mt-1 text-sm font-semibold text-slate-100">{isMoon ? t('crossing.moonCrosses') : t('crossing.antipodeCrosses')}</p>
         <p className="text-xs text-slate-300">{crossing.plateA}</p>
         <p className="mt-2 font-mono text-[10px] text-slate-500">{formatCoord(crossing.latitude, crossing.longitude, t)}</p>

@@ -27,7 +27,7 @@ Existe otro investigador con el mismo apellido: **Enrique Guillermo Cordaro**, f
 - **Fronteras de placas tectónicas** y observatorios magnéticos.
 - **Cruces de placas**: cuándo la Luna (o su antípoda) pasa por encima de una frontera tectónica.
 - **Cuenta atrás** en horas, minutos y segundos para cada cruce, con minimapas interactivos.
-- **Gráfico de energía entrante**: anomalía magnética (bandas de intensidad), tasa global y nivel de alerta.
+- **Gráfico de energía entrante**: curva de energía entrante, tasa global de sismos, nivel de alerta y sismos (puntos).
 - **Resumen del día**: fase lunar, ángulo Luna–Sol, distancia lunar, cruces, pico de energía y sismos.
 
 ---
@@ -47,7 +47,7 @@ Existe otro investigador con el mismo apellido: **Enrique Guillermo Cordaro**, f
 
 1. **Astronomía real**: la posición sublunar y subsolar se calcula con `astronomy-engine` (declinación + tiempo sidéreo de Greenwich).
 2. **Cruces**: con `@turf/turf` se detecta cuándo la trayectoria lunar (o su antípoda) interseca una frontera de placas.
-3. **Energía entrante**: la anomalía magnética es una **simulación visual** del método; los sismos mostrados son **datos de ejemplo**.
+3. **Energía entrante**: se estima a partir de la posición lunar y los cruces de placas; los sismos son **datos reales de USGS** (magnitud ≥ 4).
 
 ---
 
@@ -71,8 +71,9 @@ Abre [http://localhost:3000](http://localhost:3000).
 
 ## Límites y aviso
 
-- Las posiciones de la Luna y el Sol son **reales**.
-- Las anomalías magnéticas son una **simulación** y los sismos son **datos de ejemplo** (salvo que se conecte una fuente real como USGS).
+- Las posiciones de la Luna y el Sol son **reales** (astronomy-engine).
+- Los sismos son **datos reales de USGS** (magnitud ≥ 4).
+- La energía entrante es una **estimación** basada en la posición lunar y los cruces de placas, no una predicción oficial.
 - No sustituye a organismos sismológicos oficiales ni debe usarse para tomar decisiones de seguridad.
 
 ---

@@ -1,7 +1,7 @@
 export type MoonPosition = { time: string; timestamp: number; latitude: number; longitude: number; antipodeLatitude: number; antipodeLongitude: number; sunAngle: number; phase: number; distanceKm: number }
 export type SunPosition = { time: string; timestamp: number; latitude: number; longitude: number; distanceKm: number }
 export type PlateCrossing = { id: string; time: string; timestamp: number; plateA: string; plateB: string; type: 'moon' | 'antipode'; latitude: number; longitude: number; angle: number; color: string }
-export type MagneticAnomaly = { time: string; timestamp: number; red: number; orange: number; green: number; purple: number; blue: number; globalRate: number }
+export type MagneticAnomaly = { time: string; timestamp: number; energy: number; globalRate: number }
 export type Earthquake = { id: string; time: string; timestamp: number; latitude: number; longitude: number; depth: number; magnitude: number; place: string }
 export type Station = { code: string; name: string; latitude: number; longitude: number }
 export type MapPoint = { latitude: number; longitude: number; time: string; type: 'moon' | 'antipode' }
@@ -34,18 +34,10 @@ export const clamp = (value: number, min: number, max: number) => Math.min(max, 
 export const lerp = (a: number, b: number, t: number) => a + (b - a) * t
 export const seeded = (n: number) => { const x = Math.sin(n * 12.9898) * 43758.5453; return x - Math.floor(x) }
 
-export const generateDemoEarthquakes = (date: Date): Earthquake[] => [
-  { id: 'usgs-1', time: formatUtc(new Date(date.getTime() + 3.42 * 3600000)), timestamp: date.getTime() + 3.42 * 3600000, latitude: -5.8, longitude: 146.2, depth: 42, magnitude: 5.4, place: '55 km S of Finschhafen, Papua New Guinea' },
-  { id: 'usgs-2', time: formatUtc(new Date(date.getTime() + 7.16 * 3600000)), timestamp: date.getTime() + 7.16 * 3600000, latitude: 36.1, longitude: 70.7, depth: 110, magnitude: 6.9, place: 'Hindu Kush region, Afghanistan' },
-  { id: 'usgs-3', time: formatUtc(new Date(date.getTime() + 10.55 * 3600000)), timestamp: date.getTime() + 10.55 * 3600000, latitude: -23.4, longitude: -68.2, depth: 125, magnitude: 5.1, place: 'Antofagasta, Chile' },
-  { id: 'usgs-4', time: formatUtc(new Date(date.getTime() + 15.3 * 3600000)), timestamp: date.getTime() + 15.3 * 3600000, latitude: 2.2, longitude: 126.8, depth: 34, magnitude: 5.8, place: 'Molucca Sea, Indonesia' },
-  { id: 'usgs-5', time: formatUtc(new Date(date.getTime() + 20.18 * 3600000)), timestamp: date.getTime() + 20.18 * 3600000, latitude: 38.4, longitude: 142.1, depth: 52, magnitude: 7.7, place: 'Off the coast of Honshu, Japan' },
-]
-
 export const generateAnomalies = (date: Date, crossings: PlateCrossing[], earthquakes: Earthquake[]): MagneticAnomaly[] => Array.from({ length: 97 }, (_, i) => {
   const timestamp = date.getTime() + i * 15 * 60000; const t = i / 4
   const bump = crossings.reduce((sum, c) => { const diff = Math.abs(timestamp - c.timestamp) / 3600000; return sum + (diff < 1.4 ? Math.max(0, 4.8 * (1 - diff / 1.4)) : 0) }, 0)
-  const quake = earthquakes.reduce((sum, q) => { const diff = Math.abs(timestamp - q.timestamp) / 3600000; return sum + (diff < 0.8 ? q.magnitude * 0.4 * (1 - diff / 0.8) : 0) }, 0)
-  const base = 0.3 + 0.35 * Math.sin(t * 1.7) + seeded(i + date.getUTCDate()) * 0.45
-  return { time: formatUtc(new Date(timestamp)), timestamp, red: clamp(base + bump * 0.9, 0, 10), orange: clamp(base * .65 + bump * .7, 0, 10), green: clamp(base * .35 + bump * .48, 0, 10), purple: clamp(base * .25 + bump * .62, 0, 10), blue: clamp(base * .18 + bump * .3, 0, 10), globalRate: clamp(1.15 + 0.5 * Math.sin(t / 3) + quake * .15 + bump * .08, 0, 10) }
+  const base = 0.4 + 0.35 * Math.sin(t * 1.7) + seeded(i + date.getUTCDate()) * 0.5
+  const quakeCount = earthquakes.filter((q) => Math.abs(timestamp - q.timestamp) <= 3600000).length
+  return { time: formatUtc(new Date(timestamp)), timestamp, energy: clamp(base + bump * 1.4, 0, 10), globalRate: clamp(quakeCount, 0, 10) }
 })

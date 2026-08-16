@@ -32,7 +32,7 @@ const es = {
   'phase.full': 'Llena',
   'phase.waning': 'Menguante',
 
-  'crossings.title': 'Cruces de placas de hoy',
+  'crossings.title': 'Cruces de placas',
   'crossings.subtitle': 'Dónde y cuándo la Luna (o su antípoda) cruza una frontera tectónica',
   'crossings.count': '{n} cruces',
   'crossings.empty': 'Sin cruces detectados este día.',
@@ -57,7 +57,7 @@ const es = {
 
   'chart.title': 'Energía entrante por anomalía magnética',
   'chart.subtitle': 'Método de Richard Cordaro · ángulo Luna–Tierra–Sol frente al tiempo',
-  'chart.legend.anomaly': 'Anomalía (alta → baja)',
+  'chart.legend.energy': 'Energía entrante',
   'chart.legend.rate': 'Tasa global',
   'chart.legend.level5': 'Nivel 5',
   'chart.legend.quake': 'Sismo (M)',
@@ -97,7 +97,7 @@ const es = {
   'info.s3.p2': 'Técnico: el método de Richard Cordaro relaciona la posición lunar y las alineaciones planetarias con las anomalías magnéticas y abre una ventana de riesgo de unas horas.',
   'info.s4.title': 'La energía entrante y el gráfico',
   'info.s4.p1': 'El gráfico muestra la energía entrante estimada durante el día. Cuanto más alta, mayor probabilidad relativa de sismos en esa franja.',
-  'info.s4.p2': 'Las barras de colores son niveles de anomalía magnética (rojo = mayor intensidad). La línea azul es la tasa global y la línea naranja marca el nivel 5 de alerta.',
+  'info.s4.p2': 'La línea ámbar es la energía entrante estimada y la azul la tasa global de sismos. La línea naranja marca el nivel 5 de alerta y los puntos dorados son los sismos registrados.',
   'info.s5.title': 'Cómo leer el mapa',
   'info.s5.p1': '● Luna · ● Sol · ● Antípoda · — frontera de placas.',
   'info.s5.p2': 'Las líneas discontinuas son las trayectorias de la Luna y el Sol a lo largo del día. Los puntos blancos con la hora son los cruces.',
@@ -105,9 +105,9 @@ const es = {
   'info.s6.p1': 'Cada tarjeta de cruce indica cuánto falta (en horas, minutos y segundos) o cuánto hace que ocurrió. El próximo cruce se resalta en azul.',
   'info.s7.title': 'Datos y límites',
   'info.s7.p1': 'Las posiciones de la Luna y el Sol son reales (calculadas con astronomy-engine).',
-  'info.s7.p2': 'Las anomalías magnéticas son una simulación visual del método y los sismos son datos de ejemplo. No es una predicción sísmica oficial.',
+  'info.s7.p2': 'Los sismos son datos reales de USGS. La energía entrante es una estimación basada en la posición lunar y los cruces de placas; no es una predicción sísmica oficial.',
 
-  'footer.disclaimer': 'Posiciones lunares y solares calculadas con astronomy-engine; las anomalías son una simulación visual del método de Richard Cordaro y los sismos son datos de ejemplo.',
+  'footer.disclaimer': 'Posiciones de la Luna y el Sol calculadas con astronomy-engine; sismos reales de USGS. La energía entrante es una estimación basada en la posición lunar y los cruces de placas.',
 }
 
 const en: Record<keyof typeof es, string> = {
@@ -131,7 +131,7 @@ const en: Record<keyof typeof es, string> = {
   'kpi.crossingsSub': 'in 24 hours',
   'kpi.peak': 'Energy peak',
   'kpi.peakOf': 'of 10',
-  'kpi.quakes': 'Quakes (≥ M3)',
+  'kpi.quakes': 'Quakes (≥ M4)',
   'kpi.quakesSub': 'max M',
 
   'phase.new': 'New moon',
@@ -164,7 +164,7 @@ const en: Record<keyof typeof es, string> = {
 
   'chart.title': 'Incoming energy by magnetic anomaly',
   'chart.subtitle': 'Richard Cordaro method · Moon–Earth–Sun angle vs time',
-  'chart.legend.anomaly': 'Anomaly (high → low)',
+  'chart.legend.energy': 'Incoming energy',
   'chart.legend.rate': 'Global rate',
   'chart.legend.level5': 'Level 5',
   'chart.legend.quake': 'Quake (M)',
@@ -204,7 +204,7 @@ const en: Record<keyof typeof es, string> = {
   'info.s3.p2': "Technical: Richard Cordaro's method links lunar position and planetary alignments with magnetic anomalies, opening a risk window of a few hours.",
   'info.s4.title': 'Incoming energy and the chart',
   'info.s4.p1': 'The chart shows the estimated incoming energy during the day. The higher it is, the higher the relative chance of quakes in that window.',
-  'info.s4.p2': 'The colored bars are magnetic anomaly levels (red = strongest). The blue line is the global rate and the orange line marks alert level 5.',
+  'info.s4.p2': 'The amber line is the estimated incoming energy and the blue one is the global quake rate. The orange line marks alert level 5 and the gold dots are recorded quakes.',
   'info.s5.title': 'How to read the map',
   'info.s5.p1': '● Moon · ● Sun · ● Antipode · — plate boundary.',
   'info.s5.p2': 'The dashed lines are the Moon and Sun paths during the day. The white dots with the time are the crossings.',
@@ -212,9 +212,9 @@ const en: Record<keyof typeof es, string> = {
   'info.s6.p1': 'Each crossing card shows how long until (in hours, minutes and seconds) or how long ago it happened. The next crossing is highlighted in blue.',
   'info.s7.title': 'Data and limits',
   'info.s7.p1': 'Moon and Sun positions are real (calculated with astronomy-engine).',
-  'info.s7.p2': "Magnetic anomalies are a visual simulation of the method and quakes are sample data. This is not an official earthquake prediction.",
+  'info.s7.p2': "Quakes are real USGS data. Incoming energy is an estimate based on lunar position and plate crossings; this is not an official earthquake prediction.",
 
-  'footer.disclaimer': "Moon and Sun positions calculated with astronomy-engine; anomalies are a visual simulation of Richard Cordaro's method and quakes are sample data.",
+  'footer.disclaimer': "Moon and Sun positions calculated with astronomy-engine; quakes are real USGS data. Incoming energy is an estimate based on lunar position and plate crossings.",
 }
 
 const dictionaries: Record<Lang, Record<keyof typeof es, string>> = { es, en }
