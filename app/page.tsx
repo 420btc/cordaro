@@ -215,6 +215,15 @@ function Dashboard() {
         </div>
 
         <IntermagnetPanel />
+
+        <footer className="flex flex-wrap items-center gap-2 rounded-md border border-[#29313b] bg-[#151a21] px-4 py-3 text-xs">
+          <span className="mr-2 font-mono text-[10px] uppercase tracking-widest text-[#8b94a0]">{t('footer.sources')}</span>
+          <a href="https://x.com/rrichcord" target="_blank" rel="noreferrer" className="rounded-full border border-[#e0a028]/50 bg-[#e0a028]/10 px-3 py-1 font-semibold text-[#e0a028] transition-colors hover:bg-[#e0a028]/20 hover:text-[#ffffff]">Richard Cordaro · @rrichcord</a>
+          <a href="https://drmagneto.appspot.com" target="_blank" rel="noreferrer" className="rounded-full border border-[#e0a028]/50 bg-[#e0a028]/10 px-3 py-1 font-semibold text-[#e0a028] transition-colors hover:bg-[#e0a028]/20 hover:text-[#ffffff]">drmagneto.appspot.com</a>
+          <a href="https://intermagnet.org" target="_blank" rel="noreferrer" className="rounded-full border border-[#e0a028]/50 bg-[#e0a028]/10 px-3 py-1 font-semibold text-[#e0a028] transition-colors hover:bg-[#e0a028]/20 hover:text-[#ffffff]">INTERMAGNET</a>
+          <a href="https://earthquake.usgs.gov" target="_blank" rel="noreferrer" className="rounded-full border border-[#e0a028]/50 bg-[#e0a028]/10 px-3 py-1 font-semibold text-[#e0a028] transition-colors hover:bg-[#e0a028]/20 hover:text-[#ffffff]">USGS Earthquakes</a>
+          <a href="https://github.com/cosinekitty/astronomy" target="_blank" rel="noreferrer" className="rounded-full border border-[#e0a028]/50 bg-[#e0a028]/10 px-3 py-1 font-semibold text-[#e0a028] transition-colors hover:bg-[#e0a028]/20 hover:text-[#ffffff]">astronomy-engine</a>
+        </footer>
       </div>
 
       {showInfo && <InfoModal onClose={() => setShowInfo(false)} />}

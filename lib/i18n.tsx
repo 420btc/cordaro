@@ -168,6 +168,7 @@ const es = {
   'info.thanks.p2': 'Gracias por compartir tu investigación:',
 
   'footer.disclaimer': 'Posiciones de la Luna y el Sol calculadas con astronomy-engine; sismos reales de USGS. La energía entrante es una estimación basada en la posición lunar y los cruces de placas.',
+  'footer.sources': 'Fuentes',
 }
 
 const en: Record<keyof typeof es, string> = {
@@ -335,6 +336,7 @@ const en: Record<keyof typeof es, string> = {
   'info.thanks.p2': 'Thank you for sharing your research:',
 
   'footer.disclaimer': "Moon and Sun positions calculated with astronomy-engine; quakes are real USGS data. Incoming energy is an estimate based on lunar position and plate crossings.",
+  'footer.sources': 'Sources',
 }
 
 const dictionaries: Record<Lang, Record<keyof typeof es, string>> = { es, en }
