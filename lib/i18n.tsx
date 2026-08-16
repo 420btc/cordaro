@@ -163,6 +163,9 @@ const es = {
   'info.s7.title': 'Datos y límites',
   'info.s7.p1': 'Las posiciones de la Luna y el Sol son reales (calculadas con astronomy-engine).',
   'info.s7.p2': 'Los sismos son datos reales de USGS. La energía entrante es una estimación basada en la posición lunar y los cruces de placas; no es una predicción sísmica oficial.',
+  'info.thanks.title': 'Gracias, Richard Cordaro',
+  'info.thanks.p1': 'Esta app es un homenaje a Richard Cordaro. Todo lo que ves se basa en su metodología, sus datos de INTERMAGNET y su trabajo divulgativo en X.',
+  'info.thanks.p2': 'Gracias por compartir tu investigación:',
 
   'footer.disclaimer': 'Posiciones de la Luna y el Sol calculadas con astronomy-engine; sismos reales de USGS. La energía entrante es una estimación basada en la posición lunar y los cruces de placas.',
 }
@@ -327,6 +330,9 @@ const en: Record<keyof typeof es, string> = {
   'info.s7.title': 'Data and limits',
   'info.s7.p1': 'Moon and Sun positions are real (calculated with astronomy-engine).',
   'info.s7.p2': "Quakes are real USGS data. Incoming energy is an estimate based on lunar position and plate crossings; this is not an official earthquake prediction.",
+  'info.thanks.title': 'Thanks, Richard Cordaro',
+  'info.thanks.p1': 'This app is a tribute to Richard Cordaro. Everything you see is built on his methodology, his INTERMAGNET data and his outreach work on X.',
+  'info.thanks.p2': 'Thank you for sharing your research:',
 
   'footer.disclaimer': "Moon and Sun positions calculated with astronomy-engine; quakes are real USGS data. Incoming energy is an estimate based on lunar position and plate crossings.",
 }

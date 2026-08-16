@@ -133,7 +133,8 @@ body { min-width: 1180px; background: #0e1116; color: #e7eaee; }
 .leaflet-popup-close-button { color: #8b94a0; }
 .leaflet-tooltip { background: #151a21; color: #e7eaee; border: 1px solid #29313b; border-radius: 4px; font-size: 10px; font-weight: 700; padding: 1px 5px; }
 .leaflet-tooltip-top::before { border-top-color: #29313b; }
-.leaflet-top.leaflet-left { top: auto; bottom: 12px; }
+.leaflet-top.leaflet-left { top: auto; bottom: 4px; }
+.leaflet-left .leaflet-control { margin-left: 4px; }
 .leaflet-control-zoom a { width: 20px; height: 20px; line-height: 20px; font-size: 12px; background: #1c232b !important; background-color: #1c232b !important; color: #e7eaee !important; border-bottom: 1px solid #29313b !important; }
 .leaflet-control-zoom a:hover { background: #29313b !important; background-color: #29313b !important; color: #ffffff !important; }
 .leaflet-control-zoom a.leaflet-control-zoom-out { border-bottom: none !important; }

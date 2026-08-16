@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import dynamic from 'next/dynamic'
 import { toPng } from 'html-to-image'
-import { AlertTriangle, Binoculars, CalendarDays, CheckCircle2, Clock, Compass, Globe2, Info, Layers, Monitor, Moon, Orbit, Ruler, Sun, X, XCircle, Zap } from 'lucide-react'
+import { AlertTriangle, Binoculars, CalendarDays, CheckCircle2, Clock, Compass, Globe2, Heart, Info, Layers, Monitor, Moon, Orbit, Ruler, Sun, X, XCircle, Zap } from 'lucide-react'
 import { CordaroChart } from '@/components/CordaroChart'
 import { CordaroMap } from '@/components/CordaroMap'
 import { DateControls } from '@/components/DateControls'
@@ -464,6 +464,14 @@ function InfoModal({ onClose }: { onClose: () => void }) {
         </header>
 
         <div className="no-scrollbar flex-1 space-y-4 overflow-y-auto px-5 py-4">
+          <InfoSection icon={Heart} tint="text-[#e5484d]" title={t('info.thanks.title')}>
+            <p>{t('info.thanks.p1')}</p>
+            <p className="text-[#8b94a0]">
+              {t('info.thanks.p2')}{' '}
+              <a href="https://x.com/rrichcord" target="_blank" rel="noreferrer" className="text-[#e0a028] underline decoration-[#e0a028]/50 underline-offset-2 hover:text-[#e7eaee]">@rrichcord</a>
+            </p>
+          </InfoSection>
+
           <InfoSection icon={Moon} tint="text-[#e0a028]" title={t('info.s1.title')}>
             <p>{t('info.s1.p1')}</p>
             <p className="text-[#8b94a0]">{t('info.s1.p2')}</p>
