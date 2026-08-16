@@ -21,10 +21,10 @@ type Props = {
 function Switch({ label, checked, onChange }: { label: string; checked: boolean; onChange: (value: boolean) => void }) {
   return (
     <button type="button" onClick={() => onChange(!checked)} className="flex items-center gap-2">
-      <span className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors ${checked ? 'bg-cyan-500' : 'bg-slate-600'}`}>
+      <span className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors ${checked ? 'bg-[#e0a028]' : 'bg-[#3a434e]'}`}>
         <span className={`inline-block size-4 rounded-full bg-white shadow transition-transform ${checked ? 'translate-x-[18px]' : 'translate-x-0.5'}`} />
       </span>
-      <span className={`whitespace-nowrap text-xs font-medium transition-colors ${checked ? 'text-white' : 'text-slate-300'}`}>{label}</span>
+      <span className={`whitespace-nowrap text-xs font-medium ${checked ? 'text-[#e7eaee]' : 'text-[#8b94a0]'}`}>{label}</span>
     </button>
   )
 }
@@ -32,9 +32,9 @@ function Switch({ label, checked, onChange }: { label: string; checked: boolean;
 function LanguageToggle() {
   const { lang, setLang } = useI18n()
   return (
-    <div className="flex items-center rounded-lg border border-white/10 bg-white/5 p-0.5">
+    <div className="flex items-center rounded border border-[#29313b] bg-[#1c232b] p-0.5">
       {(['es', 'en'] as Lang[]).map((l) => (
-        <button key={l} type="button" onClick={() => setLang(l)} aria-pressed={lang === l} className={`rounded-md px-2 py-1 text-[10px] font-bold uppercase tracking-wide transition-colors ${lang === l ? 'bg-cyan-500 text-white' : 'text-slate-400 hover:text-white'}`}>
+        <button key={l} type="button" onClick={() => setLang(l)} aria-pressed={lang === l} className={`rounded px-2 py-1 text-[10px] font-bold uppercase tracking-wide transition-colors ${lang === l ? 'bg-[#e0a028] text-[#0e1116]' : 'text-[#8b94a0] hover:text-[#e7eaee]'}`}>
           {l.toUpperCase()}
         </button>
       ))}
@@ -45,21 +45,19 @@ function LanguageToggle() {
 export function DateControls(props: Props) {
   const { t } = useI18n()
   return (
-    <header className="flex flex-wrap items-center gap-x-5 gap-y-3 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 backdrop-blur-xl">
+    <header className="flex flex-wrap items-center gap-x-5 gap-y-3 rounded-md border border-[#29313b] bg-[#151a21] px-4 py-3 shadow-sm">
       <div className="flex items-center gap-3">
-        <div className="flex size-9 items-center justify-center rounded-xl text-cyan-300" style={{ background: 'linear-gradient(135deg, rgba(34,211,238,0.28), rgba(99,102,241,0.28))' }}>
-          <RadioTower className="size-5" />
-        </div>
+        <div className="flex size-9 items-center justify-center rounded bg-[#e0a028] text-[#0e1116]"><RadioTower className="size-5" /></div>
         <div>
-          <p className="text-sm font-bold leading-tight text-white">{t('brand')}</p>
-          <p className="font-mono text-[10px] uppercase tracking-widest text-slate-500">{t('subtitle')}</p>
+          <p className="font-serif text-sm font-bold leading-tight text-[#e7eaee]">{t('brand')}</p>
+          <p className="font-mono text-[10px] uppercase tracking-widest text-[#8b94a0]">{t('subtitle')}</p>
         </div>
       </div>
 
-      <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-1.5">
-        <CalendarDays className="size-4 text-cyan-300" />
-        <input aria-label="Fecha seleccionada" type="date" value={format(props.date, 'yyyy-MM-dd')} onChange={(event) => props.onDate(new Date(`${event.target.value}T00:00:00Z`))} className="bg-transparent font-mono text-xs text-white [color-scheme:dark]" />
-        <button type="button" onClick={() => props.onDate(new Date(Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), new Date().getUTCDate())))} className="rounded-lg border border-white/10 bg-white/5 px-2.5 py-1 text-xs font-semibold text-slate-200 hover:bg-white/10">{t('today')}</button>
+      <div className="flex items-center gap-2 rounded border border-[#29313b] bg-[#1c232b] px-3 py-1.5">
+        <CalendarDays className="size-4 text-[#e0a028]" />
+        <input aria-label="Fecha seleccionada" type="date" value={format(props.date, 'yyyy-MM-dd')} onChange={(event) => props.onDate(new Date(`${event.target.value}T00:00:00Z`))} className="bg-transparent font-mono text-xs text-[#e7eaee] [color-scheme:dark]" />
+        <button type="button" onClick={() => props.onDate(new Date(Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), new Date().getUTCDate())))} className="rounded border border-[#29313b] bg-[#151a21] px-2.5 py-1 text-xs font-semibold text-[#e7eaee] hover:bg-[#29313b]">{t('today')}</button>
       </div>
 
       <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
@@ -71,13 +69,9 @@ export function DateControls(props: Props) {
 
       <div className="ml-auto flex items-center gap-2">
         <LanguageToggle />
-        <button type="button" onClick={props.onInfo} className="flex h-9 items-center gap-1.5 rounded-xl border border-white/10 bg-white/5 px-3 text-xs font-semibold text-slate-200 hover:bg-white/10">
-          <Info className="size-4" /> {t('howItWorks')}
-        </button>
-        <button type="button" onClick={props.onExport} className="flex h-9 items-center gap-1.5 rounded-xl px-4 text-xs font-semibold text-white shadow-lg shadow-cyan-500/20 hover:opacity-90" style={{ background: 'linear-gradient(90deg, #06b6d4, #6366f1)' }}>
-          <Download className="size-4" /> {t('exportImage')}
-        </button>
-        <span className="font-mono text-[10px] text-slate-500">{props.live ? <RefreshCw className="inline size-4 animate-spin" /> : props.animate ? <Play className="inline size-4 text-emerald-400" /> : <Pause className="inline size-4" />}</span>
+        <button type="button" onClick={props.onInfo} className="flex h-9 items-center gap-1.5 rounded border border-[#29313b] bg-[#1c232b] px-3 text-xs font-semibold text-[#e7eaee] hover:bg-[#29313b]"><Info className="size-4" /> {t('howItWorks')}</button>
+        <button type="button" onClick={props.onExport} className="flex h-9 items-center gap-1.5 rounded bg-[#e0a028] px-4 text-xs font-semibold text-[#0e1116] hover:bg-[#c88a1f]"><Download className="size-4" /> {t('exportImage')}</button>
+        <span className="font-mono text-[10px] text-[#8b94a0]">{props.live ? <RefreshCw className="inline size-4 animate-spin" /> : props.animate ? <Play className="inline size-4 text-[#6aa86f]" /> : <Pause className="inline size-4" />}</span>
       </div>
     </header>
   )

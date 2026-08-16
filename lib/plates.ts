@@ -1,9 +1,11 @@
 import { lineString, point, lineIntersect } from '@turf/turf'
 import type { PlateCrossing, MoonPosition, PlateSegment } from './types'
-import { PLATE_COLORS, PLATE_SEGMENTS } from './types'
+import { PLATE_BOUNDARIES } from './plateBoundaries'
 
-export function detectPlateCrossings(path: MoonPosition[], segments: PlateSegment[] = PLATE_SEGMENTS): PlateCrossing[] {
+export function detectPlateCrossings(path: MoonPosition[], segments: PlateSegment[] = PLATE_BOUNDARIES): PlateCrossing[] {
   const crossings: PlateCrossing[] = []
+  // Precalcula una vez los límites como geometría de Turf (evita recrearlos en cada paso).
+  const boundaries = segments.map((segment) => lineString(segment.coordinates))
   path.slice(1).forEach((position, index) => {
     const previous = path[index]
     // Evita falsos cruces cuando la trayectoria salta la línea de cambio de fecha (>180°).
@@ -11,10 +13,10 @@ export function detectPlateCrossings(path: MoonPosition[], segments: PlateSegmen
     const antiJump = Math.abs(position.antipodeLongitude - previous.antipodeLongitude) > 180
     const moonLine = lineString([[previous.longitude, previous.latitude], [position.longitude, position.latitude]])
     const antipodeLine = lineString([[previous.antipodeLongitude, previous.antipodeLatitude], [position.antipodeLongitude, position.antipodeLatitude]])
-    segments.forEach((segment, segmentIndex) => {
-      const boundary = lineString(segment.coordinates)
-      if (!moonJump && lineIntersect(moonLine, boundary).features.length > 0) crossings.push({ id: `moon-${index}-${segmentIndex}`, time: position.time, timestamp: position.timestamp, plateA: segment.name, plateB: 'Luna', type: 'moon', latitude: position.latitude, longitude: position.longitude, angle: position.sunAngle, color: PLATE_COLORS[segmentIndex % PLATE_COLORS.length] })
-      if (!antiJump && lineIntersect(antipodeLine, boundary).features.length > 0) crossings.push({ id: `anti-${index}-${segmentIndex}`, time: position.time, timestamp: position.timestamp, plateA: segment.name, plateB: 'Antípoda', type: 'antipode', latitude: position.antipodeLatitude, longitude: position.antipodeLongitude, angle: position.sunAngle, color: '#1d4ed8' })
+    boundaries.forEach((boundary, segmentIndex) => {
+      const segment = segments[segmentIndex]
+      if (!moonJump && lineIntersect(moonLine, boundary).features.length > 0) crossings.push({ id: `moon-${index}-${segmentIndex}`, time: position.time, timestamp: position.timestamp, plateA: segment.name, plateB: 'Luna', type: 'moon', latitude: position.latitude, longitude: position.longitude, angle: position.sunAngle, color: '#c0564a' })
+      if (!antiJump && lineIntersect(antipodeLine, boundary).features.length > 0) crossings.push({ id: `anti-${index}-${segmentIndex}`, time: position.time, timestamp: position.timestamp, plateA: segment.name, plateB: 'Antípoda', type: 'antipode', latitude: position.antipodeLatitude, longitude: position.antipodeLongitude, angle: position.sunAngle, color: '#5b8db8' })
     })
   })
   return crossings

@@ -8,20 +8,12 @@ export type MapPoint = { latitude: number; longitude: number; time: string; type
 export type PlateSegment = { name: string; coordinates: [number, number][] }
 export type DayData = { positions: MoonPosition[]; sunPositions: SunPosition[]; crossings: PlateCrossing[]; anomalies: MagneticAnomaly[]; earthquakes: Earthquake[] }
 export type LoadingState = 'idle' | 'loading' | 'ready' | 'error'
-export const PLATE_COLORS = ['#e3342f', '#f59e0b', '#16a34a', '#7c3aed', '#2563eb']
 export const STATIONS: Station[] = [
   { code: 'TUC', name: 'Tucson', latitude: 32.2, longitude: -110.9 }, { code: 'BSL', name: 'Basel', latitude: 47.6, longitude: 7.6 },
   { code: 'HON', name: 'Honolulu', latitude: 21.3, longitude: -157.9 }, { code: 'PPT', name: 'Pamatai', latitude: -17.6, longitude: -149.6 },
   { code: 'HYB', name: 'Hyderabad', latitude: 17.4, longitude: 78.5 }, { code: 'PHU', name: 'Phu Thuy', latitude: 21.0, longitude: 105.9 },
   { code: 'GAN', name: 'Gan', latitude: 0.7, longitude: 73.2 }, { code: 'KNY', name: 'Kanoya', latitude: 31.4, longitude: 130.7 },
   { code: 'GUA', name: 'Guam', latitude: 13.6, longitude: 144.9 }, { code: 'CTA', name: 'Canberra', latitude: -35.3, longitude: 149.0 },
-]
-export const PLATE_SEGMENTS: PlateSegment[] = [
-  { name: 'Pacific Plate', coordinates: [[-175, 52], [-150, 35], [-125, 20], [-110, -5], [-100, -35], [-75, -55]] },
-  { name: 'Mid-Atlantic Ridge', coordinates: [[-28, 65], [-25, 40], [-20, 15], [-17, -10], [-12, -35], [-5, -58]] },
-  { name: 'East African Rift', coordinates: [[30, 15], [34, 2], [36, -15], [45, -28], [50, -42]] },
-  { name: 'Indian–Australian Boundary', coordinates: [[70, -5], [92, -10], [110, -20], [135, -35], [155, -42]] },
-  { name: 'Ring of Fire', coordinates: [[145, 55], [155, 35], [170, 10], [165, -15], [145, -35]] },
 ]
 export const PLATE_LABELS = [
   ['Pacific Plate', -150, 8], ['North American Plate', -108, 42], ['South American Plate', -62, -15], ['Nazca Plate', -95, -18],
