@@ -6,13 +6,17 @@ Monitor científico-visual de **energía entrante por anomalía magnética**, qu
 
 ---
 
-## Homenaje a Enrique Guillermo Cordaro
+## Inspiración: Richard Cordaro (@rrichcord)
 
-Este proyecto quiere rendir homenaje a **Enrique Guillermo Cordaro** (conocido como **Enrique Cordaro**), físico chileno de la **Universidad de Chile**, pionero en estudiar las variaciones del campo magnético terrestre como posible señal precursora de la actividad sísmica.
+Este proyecto está inspirado en el trabajo de **Richard Cordaro** ([@rrichcord](https://x.com/rrichcord)), investigador independiente con doctorado en Física por la **Universidad de Arizona** (EE. UU.).
 
-Su trabajo propone que, antes de grandes terremotos, se observan alteraciones características en el campo magnético local. Esta aplicación recoge esa idea de forma visual y accesible: muestra dónde está la Luna (y su antípoda) en cada momento, cuándo cruza una frontera tectónica y cómo se relaciona con la "energía entrante" estimada.
+Su método propone que ciertas alineaciones angulares de la Luna con el Sol y otros planetas generan una **"energía entrante"** que se refleja en el **espectro de anomalías magnéticas** y en la **tasa global de sismos**. Esta aplicación representa esa idea de forma visual: posición de la Luna y el Sol, ángulo Luna–Sol, cruces sobre fronteras tectónicas y una estimación de la energía entrante.
 
-Toda la base científica corresponde a su línea de investigación; aquí solo se representa de forma divulgativa.
+> **Nota**: es un método de investigación independiente, **no validado por la sismología oficial**.
+
+### No confundir con Enrique Guillermo Cordaro
+
+Existe otro investigador con el mismo apellido: **Enrique Guillermo Cordaro**, físico de la **Universidad de Chile**, que estudia las variaciones del campo magnético terrestre (rigidez de corte geomagnético, anomalías de Bz) como posible precursor sísmico, con publicaciones revisadas por pares. Son **personas distintas** y líneas de trabajo distintas.
 
 ---
 
@@ -75,6 +79,7 @@ Abre [http://localhost:3000](http://localhost:3000).
 
 ## Créditos
 
-- **Enrique Guillermo Cordaro** y su equipo de la Universidad de Chile, por la investigación en variaciones del campo magnético como precursor sísmico.
+- **Richard Cordaro** ([@rrichcord](https://x.com/rrichcord)), por el método de "energía entrante" por anomalía magnética que inspira este proyecto.
+- **Enrique Guillermo Cordaro** (Universidad de Chile), por su línea de investigación independiente en geomagnetismo y sismos.
 - `astronomy-engine` de Don Cross, por los cálculos astronómicos de alta precisión.
 - OpenStreetMap / CARTO por las teselas de los mapas.
