@@ -6,9 +6,9 @@ Monitor científico-visual de **energía entrante por anomalía magnética**, qu
 
 ---
 
-## Homenaje a Enrique Cordaro
+## Homenaje a Enrique Guillermo Cordaro
 
-Este proyecto quiere rendir homenaje a **Enrique Cordaro**, geofísico chileno de la **Universidad de Chile**, pionero en estudiar las variaciones del campo magnético terrestre como posible señal precursora de la actividad sísmica.
+Este proyecto quiere rendir homenaje a **Enrique Guillermo Cordaro** (conocido como **Enrique Cordaro**), físico chileno de la **Universidad de Chile**, pionero en estudiar las variaciones del campo magnético terrestre como posible señal precursora de la actividad sísmica.
 
 Su trabajo propone que, antes de grandes terremotos, se observan alteraciones características en el campo magnético local. Esta aplicación recoge esa idea de forma visual y accesible: muestra dónde está la Luna (y su antípoda) en cada momento, cuándo cruza una frontera tectónica y cómo se relaciona con la "energía entrante" estimada.
 
@@ -75,6 +75,6 @@ Abre [http://localhost:3000](http://localhost:3000).
 
 ## Créditos
 
-- **Enrique Cordaro** y su equipo de la Universidad de Chile, por la investigación en variaciones del campo magnético como precursor sísmico.
+- **Enrique Guillermo Cordaro** y su equipo de la Universidad de Chile, por la investigación en variaciones del campo magnético como precursor sísmico.
 - `astronomy-engine` de Don Cross, por los cálculos astronómicos de alta precisión.
 - OpenStreetMap / CARTO por las teselas de los mapas.
