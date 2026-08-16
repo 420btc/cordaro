@@ -292,12 +292,13 @@ function CrossingCard({ crossing, now, isNext, showCountdown, earthquakes }: { c
   const nearby = nearestQuakeWithin(crossing.latitude, crossing.longitude, earthquakes, 100)
   const validated = nearby != null
   const isPast = crossing.timestamp <= now
+  const validatedPast = isPast && validated
   const badgeClass = tone === 'now' ? 'bg-[#e0a028] text-[#0e1116] ring-2 ring-[#e0a028]/40 animate-pulse' : tone === 'soon' ? 'bg-[#5b8db8] text-white ring-2 ring-[#5b8db8]/40' : 'bg-[#29313b] text-[#8b94a0]'
   const [following, setFollowing] = useState(false)
   const observers = following ? 1 : 0
   return (
-    <div className={`flex-[1_1_280px] min-w-[260px] overflow-hidden rounded-md border bg-[#151a21] shadow-sm ${isNext ? 'border-[#e0a028] ring-2 ring-[#e0a028]/40 shadow-[0_0_22px_rgba(224,160,40,0.28)]' : 'border-[#29313b]'}`}>
-      <div className={`relative h-32 w-full overflow-hidden border-b ${isNext ? 'border-[#e0a028]/60' : 'border-[#29313b]'}`}>
+    <div className={`flex-[1_1_280px] min-w-[260px] overflow-hidden rounded-md border bg-[#151a21] shadow-sm ${isNext ? 'border-[#e0a028] ring-2 ring-[#e0a028]/40 shadow-[0_0_22px_rgba(224,160,40,0.28)]' : validatedPast ? 'border-[#a3e635] ring-2 ring-[#a3e635]/60 shadow-[0_0_30px_rgba(163,230,53,0.55)]' : 'border-[#29313b]'}`}>
+      <div className={`relative h-32 w-full overflow-hidden border-b ${isNext ? 'border-[#e0a028]/60' : validatedPast ? 'border-[#6aa86f]/60' : 'border-[#29313b]'}`}>
         <MiniMap latitude={crossing.latitude} longitude={crossing.longitude} color={color} />
         {isNext && (
           <>
@@ -305,6 +306,7 @@ function CrossingCard({ crossing, now, isNext, showCountdown, earthquakes }: { c
             <span className="absolute left-2 top-2 z-[500] rounded-full bg-[#e0a028] px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-wide text-[#0e1116] shadow-sm">{t('crossing.nextShort')}</span>
           </>
         )}
+        {validatedPast && <span className="pointer-events-none absolute inset-0 z-[500] ring-2 ring-inset ring-[#a3e635]/80" />}
         {isPast && (
           <div className="absolute right-2 top-2 z-[500]">
             <div className="group relative">
