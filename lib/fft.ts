@@ -78,3 +78,39 @@ export function fftSpectrum(values: number[], sampleMinutes: number, rollingWind
   }
   return out.sort((a, b) => a.period - b.period)
 }
+
+export type Spectrogram = { times: number[]; periods: number[]; values: number[][] }
+
+const PERIOD_BINS = 48
+
+// Espectrograma: FFT en ventanas deslizantes → matriz tiempo × periodo.
+// `times` son minutos desde el inicio de la serie; `values[r][c]` es la amplitud.
+export function spectrogram(values: number[], sampleMinutes: number, windowMinutes = 180, stepMinutes = 15, minPeriod = 2, maxPeriod = 120): Spectrogram {
+  const windowSize = Math.floor(windowMinutes / sampleMinutes)
+  const step = Math.floor(stepMinutes / sampleMinutes)
+  const empty: Spectrogram = { times: [], periods: [], values: [] }
+  if (values.length < 16 || windowSize < 16) return empty
+
+  const logMin = Math.log(minPeriod)
+  const logMax = Math.log(maxPeriod)
+  const periods: number[] = Array.from({ length: PERIOD_BINS }, (_, b) => Number(Math.exp(logMin + ((logMax - logMin) * b) / (PERIOD_BINS - 1)).toFixed(1)))
+
+  const times: number[] = []
+  const valuesMat: number[][] = []
+
+  for (let start = 0; start + windowSize <= values.length; start += step) {
+    const slice = values.slice(start, start + windowSize)
+    const spectrum = fftSpectrum(slice, sampleMinutes, 1)
+    const row = new Array(PERIOD_BINS).fill(0)
+    for (const s of spectrum) {
+      if (s.period < minPeriod || s.period > maxPeriod) continue
+      const t = (Math.log(s.period) - logMin) / (logMax - logMin)
+      const idx = Math.min(PERIOD_BINS - 1, Math.max(0, Math.round(t * (PERIOD_BINS - 1))))
+      if (s.amplitude > row[idx]) row[idx] = s.amplitude
+    }
+    times.push((start + Math.floor(windowSize / 2)) * sampleMinutes)
+    valuesMat.push(row)
+  }
+
+  return { times, periods, values: valuesMat }
+}

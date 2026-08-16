@@ -42,8 +42,11 @@ const es = {
   'mag.component': 'componente Z',
   'mag.magnetogram': 'Magnetograma',
   'mag.spectrum': 'Espectro FFT',
+  'mag.spectrogram': 'Espectrograma',
   'mag.axisTime': 'Tiempo (UTC)',
   'mag.axisZ': 'nT',
+  'mag.updated': 'actualizado hace',
+  'mag.source': 'Datos: INTERMAGNET · BGS',
 
   'kpi.phase': 'Fase lunar',
   'kpi.angle': 'Ángulo Luna–Sol',
@@ -184,8 +187,11 @@ const en: Record<keyof typeof es, string> = {
   'mag.component': 'Z component',
   'mag.magnetogram': 'Magnetogram',
   'mag.spectrum': 'FFT spectrum',
+  'mag.spectrogram': 'Spectrogram',
   'mag.axisTime': 'Time (UTC)',
   'mag.axisZ': 'nT',
+  'mag.updated': 'updated',
+  'mag.source': 'Data: INTERMAGNET · BGS',
 
   'kpi.phase': 'Moon phase',
   'kpi.angle': 'Moon–Sun angle',

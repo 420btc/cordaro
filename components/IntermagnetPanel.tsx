@@ -1,11 +1,11 @@
 'use client'
 import { useEffect, useMemo, useState } from 'react'
 import { Activity, Radio, RefreshCw } from 'lucide-react'
-import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
+import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { format } from 'date-fns'
 import { useI18n } from '@/lib/i18n'
 import { OBSERVATORIES } from '@/lib/observatories'
-import { fftSpectrum } from '@/lib/fft'
+import { fftSpectrum, spectrogram, type Spectrogram } from '@/lib/fft'
 
 type Status = 'loading' | 'ready' | 'error'
 type ComponentKey = 'x' | 'y' | 'z' | 'f'
@@ -45,6 +45,88 @@ function parseCsv(csv: string): { points: MagnetPoint[]; lastTime: string } {
   }
 
   return { points, lastTime }
+}
+
+function heatColor(t: number): string {
+  const stops = [
+    { at: 0, rgb: [18, 24, 31] },
+    { at: 0.45, rgb: [106, 168, 111] },
+    { at: 1, rgb: [224, 160, 40] },
+  ]
+  const x = Math.max(0, Math.min(1, t))
+  let rgb = stops[0].rgb
+  for (let i = 0; i < stops.length - 1; i++) {
+    const a = stops[i]
+    const b = stops[i + 1]
+    if (x >= a.at && x <= b.at) {
+      const f = (x - a.at) / (b.at - a.at)
+      rgb = [
+        a.rgb[0] + (b.rgb[0] - a.rgb[0]) * f,
+        a.rgb[1] + (b.rgb[1] - a.rgb[1]) * f,
+        a.rgb[2] + (b.rgb[2] - a.rgb[2]) * f,
+      ]
+      break
+    }
+  }
+  return `rgb(${Math.round(rgb[0])},${Math.round(rgb[1])},${Math.round(rgb[2])})`
+}
+
+function SpectrogramHeatmap({ spec, baseTimestamp }: { spec: Spectrogram; baseTimestamp: number }) {
+  const rows = spec.periods.length
+  const cols = spec.times.length
+  if (rows === 0 || cols === 0) return null
+
+  const flat = spec.values.flat()
+  const maxVal = flat.reduce((m, v) => Math.max(m, v), 0) || 1
+  const yLabels = [0, 0.25, 0.5, 0.75, 1].map((f) => Math.round(f * (rows - 1)))
+  const xLabels = [0, 0.25, 0.5, 0.75, 1].map((f) => Math.round(f * (cols - 1)))
+
+  return (
+    <div className="flex gap-2">
+      <div className="flex w-9 shrink-0 flex-col justify-between text-right font-mono text-[9px] leading-none text-[#8b94a0]">
+        {yLabels.map((r) => <span key={r}>{spec.periods[r]}</span>)}
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="h-56 w-full overflow-hidden rounded border border-[#29313b] bg-[#0e1116]">
+          <svg width="100%" height="100%" viewBox={`0 0 ${cols} ${rows}`} preserveAspectRatio="none">
+            {spec.values.map((row, r) => row.map((v, c) => {
+              const tNorm = v ? Math.log1p(v) / Math.log1p(maxVal) : 0
+              return <rect key={`${r}-${c}`} x={c} y={r} width={1} height={1} fill={heatColor(tNorm)} />
+            }))}
+          </svg>
+        </div>
+        <div className="mt-1 flex justify-between font-mono text-[9px] text-[#8b94a0]">
+          {xLabels.map((c) => <span key={c}>{format(new Date(baseTimestamp + spec.times[c] * 60000), 'HH:mm')}</span>)}
+        </div>
+        <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full" style={{ background: 'linear-gradient(to right, rgb(18,24,31), rgb(106,168,111), rgb(224,160,40))' }} />
+      </div>
+    </div>
+  )
+}
+
+type ChartTooltipProps = { active?: boolean; payload?: Array<{ dataKey?: string | number; value?: number | string; color?: string }>; label?: string | number }
+
+function MagnetogramTooltip({ active, payload, label }: ChartTooltipProps) {
+  if (!active || !payload?.length) return null
+  return (
+    <div className="rounded border border-[#29313b] bg-[#151a21] px-2.5 py-2 text-[11px] shadow-sm">
+      <p className="mb-1 font-mono font-bold text-[#e7eaee]">{label} UTC</p>
+      {payload.map((p) => (
+        <p key={String(p.dataKey)} style={{ color: p.color }}>{String(p.dataKey).toUpperCase()}: {Number(p.value).toFixed(1)} nT</p>
+      ))}
+    </div>
+  )
+}
+
+function SpectrumTooltip({ active, payload, label }: ChartTooltipProps) {
+  if (!active || !payload?.length) return null
+  const p = payload[0]
+  return (
+    <div className="rounded border border-[#29313b] bg-[#151a21] px-2.5 py-2 text-[11px] shadow-sm">
+      <p className="mb-1 font-mono font-bold text-[#e7eaee]">{label} min</p>
+      <p style={{ color: p.color }}>Amplitude: {Number(p.value).toExponential(2)}</p>
+    </div>
+  )
 }
 
 export function IntermagnetPanel() {
@@ -92,10 +174,21 @@ export function IntermagnetPanel() {
     return points.filter((_, i) => i % step === 0).map((p) => ({ time: format(new Date(p.time), 'HH:mm'), x: p.x, y: p.y, z: p.z, f: p.f }))
   }, [points])
 
-  const spectrum = useMemo(() => {
-    const vals = points.map((p) => p[activeKey]).filter((v): v is number => v != null)
-    return fftSpectrum(vals, 1)
-  }, [points, activeKey])
+  const activeValues = useMemo(() => points.map((p) => p[activeKey]).filter((v): v is number => v != null), [points, activeKey])
+  const spectrum = useMemo(() => fftSpectrum(activeValues, 1), [activeValues])
+  const spec = useMemo(() => spectrogram(activeValues, 1, 240), [activeValues])
+  const baseTimestamp = points.length > 0 ? new Date(points[0].time).getTime() : Date.now()
+  const ageLabel = useMemo(() => {
+    if (!lastTime) return ''
+    const ms = Math.max(0, Date.now() - new Date(lastTime).getTime())
+    const mins = Math.floor(ms / 60000)
+    if (mins < 1) return `${Math.floor(ms / 1000)}s`
+    if (mins < 60) return `${mins}m`
+    const h = Math.floor(mins / 60)
+    const d = Math.floor(h / 24)
+    if (d > 0) return `${d}d ${h % 24}h`
+    return `${h}h ${mins % 60}m`
+  }, [lastTime])
 
   const spectrumData = useMemo(() => {
     const step = Math.max(1, Math.floor(spectrum.length / 300))
@@ -103,7 +196,6 @@ export function IntermagnetPanel() {
   }, [spectrum])
 
   const axisStyle = { fill: '#8b94a0', fontSize: 10 }
-  const tooltipStyle = { background: '#151a21', border: '1px solid #29313b', fontSize: 12 }
 
   return (
     <section className="rounded-md border border-[#29313b] bg-[#151a21] p-4 shadow-sm">
@@ -140,15 +232,24 @@ export function IntermagnetPanel() {
             <div className="h-44 w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={magnetogramData} margin={{ top: 5, right: 12, bottom: 20, left: 8 }}>
+                  <CartesianGrid stroke="#29313b" strokeDasharray="0" vertical={false} />
                   <XAxis dataKey="time" minTickGap={40} tick={axisStyle} stroke="#29313b" label={{ value: t('mag.axisTime'), position: 'insideBottom', offset: -12, fill: '#8b94a0', fontSize: 10 }} />
                   <YAxis tick={axisStyle} stroke="#29313b" width={56} label={{ value: t('mag.axisZ'), angle: -90, position: 'insideLeft', fill: '#8b94a0', fontSize: 10 }} />
-                  <Tooltip contentStyle={tooltipStyle} labelFormatter={(value) => `${value} UTC`} />
+                  <Tooltip content={(props: any) => <MagnetogramTooltip {...props} />} cursor={{ stroke: '#29313b', strokeWidth: 1 }} />
                   {available.map((c) => (
                     <Line key={c.key} dataKey={c.key} type="monotone" stroke={c.color} strokeWidth={1.2} dot={false} isAnimationActive={false} connectNulls={false} />
                   ))}
                 </LineChart>
               </ResponsiveContainer>
             </div>
+          </div>
+
+          <div>
+            <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
+              <p className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-widest text-[#d08a3a]"><Activity className="size-3.5" /> {t('mag.spectrogram')}</p>
+              <span className="font-mono text-[10px] text-[#8b94a0]">{activeComponent.label} · {t('mag.axisX')}</span>
+            </div>
+            <SpectrogramHeatmap spec={spec} baseTimestamp={baseTimestamp} />
           </div>
 
           <div>
@@ -165,9 +266,10 @@ export function IntermagnetPanel() {
             <div className="h-44 w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={spectrumData} margin={{ top: 5, right: 12, bottom: 20, left: 8 }}>
+                  <CartesianGrid stroke="#29313b" strokeDasharray="0" vertical={false} />
                   <XAxis dataKey="period" type="number" domain={['dataMin', 'dataMax']} tick={axisStyle} stroke="#29313b" label={{ value: t('mag.axisX'), position: 'insideBottom', offset: -12, fill: '#8b94a0', fontSize: 10 }} />
                   <YAxis tick={axisStyle} stroke="#29313b" width={56} />
-                  <Tooltip contentStyle={tooltipStyle} labelFormatter={(value) => `${value} min`} />
+                  <Tooltip content={(props: any) => <SpectrumTooltip {...props} />} cursor={{ stroke: '#29313b', strokeWidth: 1 }} />
                   <Line dataKey="amplitude" type="monotone" stroke={activeComponent.color} strokeWidth={1.5} dot={false} isAnimationActive={false} />
                 </LineChart>
               </ResponsiveContainer>
@@ -176,7 +278,12 @@ export function IntermagnetPanel() {
         </div>
       )}
 
-      {status === 'ready' && <p className="mt-2 flex items-center gap-1.5 font-mono text-[10px] text-[#8b94a0]"><Activity className="size-3.5 text-[#6aa86f]" /> {t('mag.last')} {lastTime} · {activeComponent.label}</p>}
+      {status === 'ready' && (
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-[#29313b] pt-2 font-mono text-[10px] text-[#8b94a0]">
+          <span className="flex items-center gap-1.5"><Activity className="size-3.5 text-[#6aa86f]" /> {t('mag.last')} {lastTime} · {t('mag.updated')} {ageLabel}</span>
+          <a href="https://intermagnet.org" target="_blank" rel="noreferrer" className="transition-colors hover:text-[#e7eaee]">{t('mag.source')}</a>
+        </div>
+      )}
     </section>
   )
 }
