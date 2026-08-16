@@ -32,6 +32,10 @@ const es = {
   'xprofile.following': 'siguiendo',
   'xprofile.posts': 'posts',
 
+  'mobile.title': 'Mejor en ordenador',
+  'mobile.body': 'Esta web está optimizada para pantalla grande. Para ver mapas y gráficos con claridad, ábrela en un PC o portátil.',
+  'mobile.close': 'Entendido',
+
   'mag.title': 'Anomalía magnética · Intermagnet',
   'mag.subtitle': 'Magnetograma (X · Y · Z · F) + FFT · últimas 24 h · datos reales',
   'mag.refresh': 'Actualizar',
@@ -70,6 +74,10 @@ const es = {
   'crossings.count': '{n} cruces',
   'crossings.empty': 'Sin cruces detectados este día.',
   'crossing.next': 'Próximo cruce',
+  'crossing.nextShort': 'Próximo',
+  'crossing.validated': 'Sismo M{magnitude} a {dist} km',
+  'crossing.notValidated': 'Sin sismo a 100 km ese día',
+  'crossing.info': 'Verificado con sismos USGS ≥ M4 · radio 100 km · ese día',
   'crossing.moonCrosses': 'La Luna cruza',
   'crossing.antipodeCrosses': 'La antípoda cruza',
 
@@ -177,6 +185,10 @@ const en: Record<keyof typeof es, string> = {
   'xprofile.following': 'following',
   'xprofile.posts': 'posts',
 
+  'mobile.title': 'Better on desktop',
+  'mobile.body': 'This site is optimized for large screens. For the clearest view of maps and charts, open it on a PC or laptop.',
+  'mobile.close': 'Got it',
+
   'mag.title': 'Magnetic anomaly · Intermagnet',
   'mag.subtitle': 'Magnetogram (X · Y · Z · F) + FFT · last 24h · real data',
   'mag.refresh': 'Refresh',
@@ -215,6 +227,10 @@ const en: Record<keyof typeof es, string> = {
   'crossings.count': '{n} crossings',
   'crossings.empty': 'No crossings detected this day.',
   'crossing.next': 'Next crossing',
+  'crossing.nextShort': 'Next',
+  'crossing.validated': 'M{magnitude} quake at {dist} km',
+  'crossing.notValidated': 'No quake within 100 km that day',
+  'crossing.info': 'Checked with USGS quakes ≥ M4 · 100 km radius · that day',
   'crossing.moonCrosses': 'The Moon crosses',
   'crossing.antipodeCrosses': 'The antipode crosses',
 

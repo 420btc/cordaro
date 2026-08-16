@@ -1,6 +1,27 @@
 import type { Earthquake } from './types'
 import { formatUtc } from './types'
 
+export function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371
+  const toRad = (deg: number) => (deg * Math.PI) / 180
+  const dLat = toRad(lat2 - lat1)
+  const dLon = toRad(lon2 - lon1)
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+}
+
+// Devuelve el sismo más cercano dentro de un radio (por defecto 100 km).
+export function nearestQuakeWithin(latitude: number, longitude: number, quakes: Earthquake[], radiusKm = 100): { quake: Earthquake; distanceKm: number } | null {
+  let best: { quake: Earthquake; distanceKm: number } | null = null
+  for (const quake of quakes) {
+    const distanceKm = haversineKm(latitude, longitude, quake.latitude, quake.longitude)
+    if (distanceKm <= radiusKm && (!best || distanceKm < best.distanceKm)) {
+      best = { quake, distanceKm }
+    }
+  }
+  return best
+}
+
 export async function fetchEarthquakes(day: Date): Promise<Earthquake[]> {
   const start = day.toISOString()
   const end = new Date(day.getTime() + 86400000).toISOString()

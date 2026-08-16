@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import dynamic from 'next/dynamic'
 import { toPng } from 'html-to-image'
-import { AlertTriangle, Binoculars, CalendarDays, Clock, Compass, Globe2, Layers, Moon, Ruler, Sun, X, Zap } from 'lucide-react'
+import { AlertTriangle, Binoculars, CalendarDays, CheckCircle2, Clock, Compass, Globe2, Info, Layers, Monitor, Moon, Ruler, Sun, X, XCircle, Zap } from 'lucide-react'
 import { CordaroChart } from '@/components/CordaroChart'
 import { CordaroMap } from '@/components/CordaroMap'
 import { DateControls } from '@/components/DateControls'
@@ -11,7 +11,7 @@ import { XProfile } from '@/components/XProfile'
 import { IntermagnetPanel } from '@/components/IntermagnetPanel'
 import { dateKey, generateAnomalies, type DayData, type Earthquake, type MoonPosition, type PlateCrossing } from '@/lib/types'
 import { generateCelestialData } from '@/lib/dailyData'
-import { fetchEarthquakes } from '@/lib/earthquakes'
+import { fetchEarthquakes, nearestQuakeWithin } from '@/lib/earthquakes'
 import { moonIllumination, moonPhaseKey } from '@/lib/astronomy'
 import { I18nProvider, useI18n, type TFunction } from '@/lib/i18n'
 import { format } from 'date-fns'
@@ -100,6 +100,7 @@ function Dashboard() {
   const [crossingsOnly, setCrossingsOnly] = useState(false)
   const [showAntipode, setShowAntipode] = useState(true)
   const [showInfo, setShowInfo] = useState(false)
+  const [showMobileNotice, setShowMobileNotice] = useState(false)
   const captureRef = useRef<HTMLDivElement>(null)
 
   const celestial = useMemo(() => generateCelestialData(date), [date])
@@ -155,6 +156,11 @@ function Dashboard() {
   }, [])
 
   useEffect(() => {
+    if (typeof window === 'undefined') return
+    if (window.matchMedia('(max-width: 768px)').matches) setShowMobileNotice(true)
+  }, [])
+
+  useEffect(() => {
     if (!nextCrossing) return
     const timer = window.setInterval(() => {
       const remaining = nextCrossing.timestamp - Date.now()
@@ -178,7 +184,7 @@ function Dashboard() {
         <XProfile />
         <WorldClocks nextCrossing={nextUpcomingCrossing} />
         <SummaryStrip data={data} summary={summary} />
-        <CrossingsTimeline crossings={data.crossings} date={date} />
+        <CrossingsTimeline crossings={data.crossings} date={date} earthquakes={data.earthquakes} />
 
         <div ref={captureRef} className="flex flex-col gap-4">
           <CordaroChart data={data.anomalies} crossings={data.crossings} earthquakes={data.earthquakes} crossingsOnly={crossingsOnly} date={date} />
@@ -196,6 +202,20 @@ function Dashboard() {
       </div>
 
       {showInfo && <InfoModal onClose={() => setShowInfo(false)} />}
+
+      {showMobileNotice && (
+        <div className="fixed inset-0 z-[1100] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-sm rounded-md border border-[#29313b] bg-[#151a21] p-5 shadow-xl">
+            <div className="mb-3 flex items-start justify-between gap-3">
+              <div className="flex size-9 items-center justify-center rounded bg-[#e0a028] text-[#0e1116]"><Monitor className="size-5" /></div>
+              <button type="button" onClick={() => setShowMobileNotice(false)} aria-label={t('mobile.close')} className="rounded p-1 text-[#8b94a0] hover:bg-[#29313b] hover:text-[#e7eaee]"><X className="size-5" /></button>
+            </div>
+            <h2 className="font-serif text-base font-bold text-[#e7eaee]">{t('mobile.title')}</h2>
+            <p className="mt-2 text-sm leading-relaxed text-[#c5ccd4]">{t('mobile.body')}</p>
+            <button type="button" onClick={() => setShowMobileNotice(false)} className="mt-4 w-full rounded-md bg-[#e0a028] px-4 py-2 text-sm font-bold text-[#0e1116] hover:bg-[#f0b940]">{t('mobile.close')}</button>
+          </div>
+        </div>
+      )}
     </main>
   )
 }
@@ -228,7 +248,7 @@ function SummaryStrip({ data, summary }: { data: DayData; summary: { mid: MoonPo
   )
 }
 
-function CrossingsTimeline({ crossings, date }: { crossings: PlateCrossing[]; date: Date }) {
+function CrossingsTimeline({ crossings, date, earthquakes }: { crossings: PlateCrossing[]; date: Date; earthquakes: Earthquake[] }) {
   const { t } = useI18n()
   const isToday = dateKey(date) === dateKey(new Date())
   const [now, setNow] = useState(() => Date.now())
@@ -253,25 +273,50 @@ function CrossingsTimeline({ crossings, date }: { crossings: PlateCrossing[]; da
         <p className="text-sm text-[#8b94a0]">{t('crossings.empty')}</p>
       ) : (
         <div className="flex flex-wrap gap-3">
-          {sorted.map((crossing) => <CrossingCard key={crossing.id} crossing={crossing} now={now} isNext={crossing.id === nextId} showCountdown={isToday} />)}
+          {sorted.map((crossing) => <CrossingCard key={crossing.id} crossing={crossing} now={now} isNext={crossing.id === nextId} showCountdown={isToday} earthquakes={earthquakes} />)}
         </div>
       )}
     </section>
   )
 }
 
-function CrossingCard({ crossing, now, isNext, showCountdown }: { crossing: PlateCrossing; now: number; isNext: boolean; showCountdown: boolean }) {
+function CrossingCard({ crossing, now, isNext, showCountdown, earthquakes }: { crossing: PlateCrossing; now: number; isNext: boolean; showCountdown: boolean; earthquakes: Earthquake[] }) {
   const { t } = useI18n()
   const isMoon = crossing.type === 'moon'
   const color = isMoon ? '#c0564a' : '#5b8db8'
   const { label, tone } = formatCountdown(crossing.timestamp, now, t)
+  const nearby = nearestQuakeWithin(crossing.latitude, crossing.longitude, earthquakes, 100)
+  const validated = nearby != null
+  const isPast = crossing.timestamp <= now
   const badgeClass = tone === 'now' ? 'bg-[#e0a028] text-[#0e1116] ring-2 ring-[#e0a028]/40 animate-pulse' : tone === 'soon' ? 'bg-[#5b8db8] text-white ring-2 ring-[#5b8db8]/40' : 'bg-[#29313b] text-[#8b94a0]'
   const [following, setFollowing] = useState(false)
   const observers = following ? 1 : 0
   return (
-    <div className={`flex-[1_1_280px] min-w-[260px] overflow-hidden rounded-md border bg-[#151a21] shadow-sm ${isNext ? 'border-[#e0a028]/60 ring-1 ring-[#e0a028]/30' : 'border-[#29313b]'}`}>
-      <div className="h-32 w-full overflow-hidden border-b border-[#29313b]">
+    <div className={`flex-[1_1_280px] min-w-[260px] overflow-hidden rounded-md border bg-[#151a21] shadow-sm ${isNext ? 'border-[#e0a028] ring-2 ring-[#e0a028]/40 shadow-[0_0_22px_rgba(224,160,40,0.28)]' : 'border-[#29313b]'}`}>
+      <div className={`relative h-32 w-full overflow-hidden border-b ${isNext ? 'border-[#e0a028]/60' : 'border-[#29313b]'}`}>
         <MiniMap latitude={crossing.latitude} longitude={crossing.longitude} color={color} />
+        {isNext && (
+          <>
+            <span className="pointer-events-none absolute inset-0 z-[500] animate-pulse ring-2 ring-inset ring-[#e0a028]" />
+            <span className="absolute left-2 top-2 z-[500] rounded-full bg-[#e0a028] px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-wide text-[#0e1116] shadow-sm">{t('crossing.nextShort')}</span>
+          </>
+        )}
+        {isPast && (
+          <div className="absolute right-2 top-2 z-[500]">
+            <div className="group relative">
+              <div className={`flex items-center gap-1 rounded-full border px-1.5 py-0.5 backdrop-blur-sm ${validated ? 'border-[#6aa86f]/50 bg-[#0e1116]/85' : 'border-[#c0564a]/50 bg-[#0e1116]/85'}`}>
+                {validated ? <CheckCircle2 className="size-3.5 text-[#6aa86f]" /> : <XCircle className="size-3.5 text-[#c0564a]" />}
+                <Info className="size-3 text-[#8b94a0]" />
+              </div>
+              <div className="pointer-events-none absolute right-0 top-7 z-[600] hidden w-48 rounded border border-[#29313b] bg-[#151a21] p-2 text-[10px] leading-relaxed text-[#e7eaee] shadow-md group-hover:block">
+                <p className="mb-1 font-mono uppercase tracking-wide text-[#8b94a0]">{t('crossing.info')}</p>
+                <p className={validated ? 'text-[#6aa86f]' : 'text-[#c0564a]'}>
+                  {validated && nearby ? t('crossing.validated', { magnitude: nearby.quake.magnitude.toFixed(1), dist: Math.round(nearby.distanceKm) }) : t('crossing.notValidated')}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
       <div className="p-3">
         <div className="flex items-center justify-between gap-2">
