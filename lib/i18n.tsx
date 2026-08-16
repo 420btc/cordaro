@@ -15,6 +15,17 @@ const es = {
   howItWorks: 'Cómo funciona',
   exportImage: 'Exportar imagen',
 
+  'observers.join': 'Unirse como observador',
+  'observers.leave': 'Dejar de observar',
+  'observers.label': 'observadores',
+
+  'worldclocks.title': 'Relojes mundiales',
+  'worldclocks.location': 'Tu ubicación',
+  'worldclocks.you': 'Tú',
+  'worldclocks.none': 'Sin cruces próximos',
+  'worldclocks.today': 'hoy',
+  'worldclocks.tomorrow': 'mañana',
+
   'kpi.phase': 'Fase lunar',
   'kpi.angle': 'Ángulo Luna–Sol',
   'kpi.angleSub': 'separación angular',
@@ -83,6 +94,11 @@ const es = {
   'map.popupCrosses': 'cruza',
   'map.popupObservatory': 'Observatorio Intermagnet',
 
+  'quakeMap.aria': 'Mapa de terremotos recientes',
+  'quakeMap.title': 'Terremotos recientes',
+  'quakeMap.subtitle': 'Magnitud ≥ 4 · día seleccionado',
+  'quakeMap.legend': 'Magnitud',
+
   'info.eyebrow': 'Guía rápida',
   'info.title': '¿Qué estoy viendo?',
   'info.close': 'Cerrar',
@@ -121,6 +137,17 @@ const en: Record<keyof typeof es, string> = {
   pauseMoon: 'Pause moon',
   howItWorks: 'How it works',
   exportImage: 'Export image',
+
+  'observers.join': 'Join as observer',
+  'observers.leave': 'Stop observing',
+  'observers.label': 'observers',
+
+  'worldclocks.title': 'World clocks',
+  'worldclocks.location': 'Your location',
+  'worldclocks.you': 'You',
+  'worldclocks.none': 'No upcoming crossings',
+  'worldclocks.today': 'today',
+  'worldclocks.tomorrow': 'tomorrow',
 
   'kpi.phase': 'Moon phase',
   'kpi.angle': 'Moon–Sun angle',
@@ -189,6 +216,11 @@ const en: Record<keyof typeof es, string> = {
   'map.popupAntipode': "Moon's antipode",
   'map.popupCrosses': 'crosses',
   'map.popupObservatory': 'Intermagnet observatory',
+
+  'quakeMap.aria': 'Recent earthquakes map',
+  'quakeMap.title': 'Recent earthquakes',
+  'quakeMap.subtitle': 'Magnitude ≥ 4 · selected day',
+  'quakeMap.legend': 'Magnitude',
 
   'info.eyebrow': 'Quick guide',
   'info.title': 'What am I looking at?',

@@ -2,10 +2,11 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import dynamic from 'next/dynamic'
 import { toPng } from 'html-to-image'
-import { AlertTriangle, CalendarDays, Clock, Compass, Globe2, Layers, Moon, Ruler, Sun, X, Zap } from 'lucide-react'
+import { AlertTriangle, Binoculars, CalendarDays, Clock, Compass, Globe2, Layers, Moon, Ruler, Sun, X, Zap } from 'lucide-react'
 import { CordaroChart } from '@/components/CordaroChart'
 import { CordaroMap } from '@/components/CordaroMap'
 import { DateControls } from '@/components/DateControls'
+import { WorldClocks } from '@/components/WorldClocks'
 import { dateKey, generateAnomalies, type DayData, type Earthquake, type MoonPosition, type PlateCrossing } from '@/lib/types'
 import { generateCelestialData } from '@/lib/dailyData'
 import { fetchEarthquakes } from '@/lib/earthquakes'
@@ -14,6 +15,7 @@ import { I18nProvider, useI18n, type TFunction } from '@/lib/i18n'
 import { format } from 'date-fns'
 
 const MiniMap = dynamic(() => import('@/components/MiniMap').then((m) => m.MiniMap), { ssr: false, loading: () => <div className="h-full w-full bg-[#0e1116]" /> })
+const EarthquakeMap = dynamic(() => import('@/components/EarthquakeMap').then((m) => m.EarthquakeMap), { ssr: false, loading: () => <div className="h-full w-full bg-[#0e1116]" /> })
 
 function formatDuration(ms: number, t: TFunction): string {
   const totalSec = Math.max(0, Math.floor(ms / 1000))
@@ -40,6 +42,48 @@ function formatCoord(latitude: number, longitude: number, t: TFunction): string 
   const latDir = latitude >= 0 ? t('coord.north') : t('coord.south')
   const lonDir = longitude >= 0 ? t('coord.east') : t('coord.west')
   return `${t('coord.lat')} ${Math.abs(latitude).toFixed(0)}° ${latDir} · ${t('coord.lon')} ${Math.abs(longitude).toFixed(0)}° ${lonDir}`
+}
+
+let audioContext: AudioContext | null = null
+
+function ensureAudio(): AudioContext | null {
+  if (typeof window === 'undefined') return null
+  const w = window as unknown as { AudioContext?: typeof AudioContext; webkitAudioContext?: typeof AudioContext }
+  const Ctx = w.AudioContext ?? w.webkitAudioContext
+  if (!Ctx) return null
+  if (!audioContext) audioContext = new Ctx()
+  if (audioContext.state === 'suspended') void audioContext.resume()
+  return audioContext
+}
+
+function playBeep(frequency: number) {
+  const ctx = ensureAudio()
+  if (!ctx || ctx.state !== 'running') return
+  try {
+    const oscillator = ctx.createOscillator()
+    const gain = ctx.createGain()
+    oscillator.type = 'sine'
+    oscillator.frequency.value = frequency
+    const now = ctx.currentTime
+    gain.gain.setValueAtTime(0.0001, now)
+    gain.gain.exponentialRampToValueAtTime(0.05, now + 0.02)
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.4)
+    oscillator.connect(gain)
+    gain.connect(ctx.destination)
+    oscillator.start(now)
+    oscillator.stop(now + 0.45)
+  } catch {
+    // audio bloqueado por el navegador; se ignora
+  }
+}
+
+const BEEP_FREQ = [880, 660, 440] // 1 min, 5 min, 10 min
+
+function crossingAlertLevel(remainingMs: number): number {
+  if (remainingMs <= 60000) return 0
+  if (remainingMs <= 300000) return 1
+  if (remainingMs <= 600000) return 2
+  return 3
 }
 
 export default function Page() {
@@ -78,18 +122,57 @@ function Dashboard() {
     return sorted.find((crossing) => crossing.timestamp > now) ?? sorted[0]
   }, [data.crossings])
 
+  const tomorrowCrossings = useMemo(() => generateCelestialData(new Date(date.getTime() + 86400000)).crossings, [date])
+  const nextUpcomingCrossing = useMemo(() => {
+    const now = Date.now()
+    return [...data.crossings, ...tomorrowCrossings]
+      .filter((crossing) => crossing.timestamp > now)
+      .sort((a, b) => a.timestamp - b.timestamp)[0]
+  }, [data.crossings, tomorrowCrossings])
+
+  const beepStateRef = useRef<{ timestamp: number; level: number }>({ timestamp: 0, level: 3 })
+
+  useEffect(() => {
+    const unlock = () => ensureAudio()
+    window.addEventListener('pointerdown', unlock)
+    window.addEventListener('keydown', unlock)
+    return () => {
+      window.removeEventListener('pointerdown', unlock)
+      window.removeEventListener('keydown', unlock)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!nextCrossing) return
+    const timer = window.setInterval(() => {
+      const remaining = nextCrossing.timestamp - Date.now()
+      if (remaining <= 0) return
+      if (beepStateRef.current.timestamp !== nextCrossing.timestamp) {
+        beepStateRef.current = { timestamp: nextCrossing.timestamp, level: 3 }
+      }
+      const level = crossingAlertLevel(remaining)
+      if (level < beepStateRef.current.level) playBeep(BEEP_FREQ[level])
+      beepStateRef.current.level = level
+    }, 1000)
+    return () => window.clearInterval(timer)
+  }, [nextCrossing])
+
   const exportImage = async () => { if (!captureRef.current) return; const image = await toPng(captureRef.current, { pixelRatio: 2, backgroundColor: '#0e1116' }); const link = document.createElement('a'); link.download = `energia-entrante-${dateKey(date)}.png`; link.href = image; link.click() }
 
   return (
     <main className="relative min-h-screen overflow-x-hidden bg-[#0e1116] font-sans text-[#e7eaee]">
       <div className="relative mx-auto flex min-h-screen max-w-[1800px] flex-col gap-4 p-4">
         <DateControls date={date} live={live} animate={animate} crossingsOnly={crossingsOnly} showAntipode={showAntipode} onDate={setDate} onLive={setLive} onAnimate={setAnimate} onCrossingsOnly={setCrossingsOnly} onAntipode={setShowAntipode} onExport={exportImage} onInfo={() => setShowInfo(true)} />
+        <WorldClocks nextCrossing={nextUpcomingCrossing} />
         <SummaryStrip data={data} summary={summary} />
         <CrossingsTimeline crossings={data.crossings} date={date} />
 
         <div ref={captureRef} className="flex flex-col gap-4">
           <CordaroChart data={data.anomalies} crossings={data.crossings} earthquakes={data.earthquakes} crossingsOnly={crossingsOnly} date={date} />
           <CordaroMap positions={data.positions} sunPositions={data.sunPositions} crossings={data.crossings} showAntipode={showAntipode} animate={animate} nextCrossing={nextCrossing} />
+          <section aria-label={t('quakeMap.aria')} className="h-[42vh] min-h-[380px] shrink-0 overflow-hidden rounded-md border border-[#29313b] bg-[#0e1116]">
+            <EarthquakeMap earthquakes={data.earthquakes} nextCrossing={nextCrossing} />
+          </section>
           <footer className="flex items-start gap-2 px-1 pb-1 text-[11px] leading-relaxed text-[#8b94a0]">
             <AlertTriangle className="mt-0.5 size-3.5 shrink-0 text-[#e0a028]" />
             <span>{t('footer.disclaimer')}</span>
@@ -167,7 +250,9 @@ function CrossingCard({ crossing, now, isNext, showCountdown }: { crossing: Plat
   const isMoon = crossing.type === 'moon'
   const color = isMoon ? '#c0564a' : '#5b8db8'
   const { label, tone } = formatCountdown(crossing.timestamp, now, t)
-  const toneClass = tone === 'now' ? 'bg-[#e0a028]/15 text-[#e0a028]' : tone === 'soon' ? 'bg-[#5b8db8]/15 text-[#5b8db8]' : 'bg-[#29313b]/60 text-[#8b94a0]'
+  const badgeClass = tone === 'now' ? 'bg-[#e0a028] text-[#0e1116] ring-2 ring-[#e0a028]/40 animate-pulse' : tone === 'soon' ? 'bg-[#5b8db8] text-white ring-2 ring-[#5b8db8]/40' : 'bg-[#29313b] text-[#8b94a0]'
+  const [following, setFollowing] = useState(false)
+  const observers = following ? 1 : 0
   return (
     <div className={`flex-[1_1_280px] min-w-[260px] overflow-hidden rounded-md border bg-[#151a21] shadow-sm ${isNext ? 'border-[#e0a028]/60 ring-1 ring-[#e0a028]/30' : 'border-[#29313b]'}`}>
       <div className="h-32 w-full overflow-hidden border-b border-[#29313b]">
@@ -176,12 +261,25 @@ function CrossingCard({ crossing, now, isNext, showCountdown }: { crossing: Plat
       <div className="p-3">
         <div className="flex items-center justify-between gap-2">
           <span className="font-mono text-lg font-bold text-[#e7eaee]">{crossing.time}</span>
-          {showCountdown && <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${toneClass}`}>{label}</span>}
+          {showCountdown && <span className={`rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide ${badgeClass}`}>{label}</span>}
         </div>
         {showCountdown && isNext && <p className="mt-1 font-mono text-[10px] font-bold uppercase tracking-wider text-[#e0a028]">{t('crossing.next')}</p>}
         <p className="mt-1 font-serif text-sm font-semibold text-[#e7eaee]">{isMoon ? t('crossing.moonCrosses') : t('crossing.antipodeCrosses')}</p>
         <p className="text-xs text-[#8b94a0]">{crossing.plateA}</p>
         <p className="mt-2 font-mono text-[10px] text-[#8b94a0]">{formatCoord(crossing.latitude, crossing.longitude, t)}</p>
+        <div className="mt-2 flex items-center justify-end">
+          <button
+            type="button"
+            onClick={() => setFollowing((value) => !value)}
+            aria-pressed={following}
+            aria-label={following ? t('observers.leave') : t('observers.join')}
+            title={`${observers} ${t('observers.label')}`}
+            className={`flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-bold shadow-sm ${following ? 'border-[#e0a028]/70 bg-[#e0a028]/10 text-[#e0a028]' : 'border-[#29313b] bg-[#1c232b] text-[#8b94a0] hover:text-[#e7eaee]'}`}
+          >
+            <Binoculars className="size-3.5" />
+            <span className="font-mono tabular-nums">{observers}</span>
+          </button>
+        </div>
       </div>
     </div>
   )
