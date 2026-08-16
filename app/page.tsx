@@ -7,6 +7,7 @@ import { CordaroChart } from '@/components/CordaroChart'
 import { CordaroMap } from '@/components/CordaroMap'
 import { DateControls } from '@/components/DateControls'
 import { WorldClocks } from '@/components/WorldClocks'
+import { XProfile } from '@/components/XProfile'
 import { dateKey, generateAnomalies, type DayData, type Earthquake, type MoonPosition, type PlateCrossing } from '@/lib/types'
 import { generateCelestialData } from '@/lib/dailyData'
 import { fetchEarthquakes } from '@/lib/earthquakes'
@@ -163,6 +164,7 @@ function Dashboard() {
     <main className="relative min-h-screen overflow-x-hidden bg-[#0e1116] font-sans text-[#e7eaee]">
       <div className="relative mx-auto flex min-h-screen max-w-[1800px] flex-col gap-4 p-4">
         <DateControls date={date} live={live} animate={animate} crossingsOnly={crossingsOnly} showAntipode={showAntipode} onDate={setDate} onLive={setLive} onAnimate={setAnimate} onCrossingsOnly={setCrossingsOnly} onAntipode={setShowAntipode} onExport={exportImage} onInfo={() => setShowInfo(true)} />
+        <XProfile />
         <WorldClocks nextCrossing={nextUpcomingCrossing} />
         <SummaryStrip data={data} summary={summary} />
         <CrossingsTimeline crossings={data.crossings} date={date} />

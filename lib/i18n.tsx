@@ -26,6 +26,12 @@ const es = {
   'worldclocks.today': 'hoy',
   'worldclocks.tomorrow': 'mañana',
 
+  'xprofile.title': 'Richard Cordaro en X',
+  'xprofile.view': 'Ver en X',
+  'xprofile.followers': 'seguidores',
+  'xprofile.following': 'siguiendo',
+  'xprofile.posts': 'posts',
+
   'kpi.phase': 'Fase lunar',
   'kpi.angle': 'Ángulo Luna–Sol',
   'kpi.angleSub': 'separación angular',
@@ -149,6 +155,12 @@ const en: Record<keyof typeof es, string> = {
   'worldclocks.today': 'today',
   'worldclocks.tomorrow': 'tomorrow',
 
+  'xprofile.title': 'Richard Cordaro on X',
+  'xprofile.view': 'View on X',
+  'xprofile.followers': 'followers',
+  'xprofile.following': 'following',
+  'xprofile.posts': 'posts',
+
   'kpi.phase': 'Moon phase',
   'kpi.angle': 'Moon–Sun angle',
   'kpi.angleSub': 'angular separation',
@@ -267,7 +279,7 @@ type I18nContextValue = {
 const I18nContext = createContext<I18nContextValue | null>(null)
 
 export function I18nProvider({ children }: { children: ReactNode }) {
-  const [lang, setLang] = useState<Lang>('es')
+  const [lang, setLang] = useState<Lang>('en')
   const t: I18nContextValue['t'] = (key, params) => interpolate(dictionaries[lang][key], params)
   return <I18nContext.Provider value={{ lang, setLang, t }}>{children}</I18nContext.Provider>
 }

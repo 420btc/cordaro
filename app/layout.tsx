@@ -4,7 +4,7 @@ import './globals.css'
 
 export const metadata: Metadata = {
   title: 'Cordaro Monitor · Incoming Energy by Magnetic Anomaly',
-  description: 'Monitor visual de energía entrante por anomalía magnética, posiciones de la Luna y el Sol, cruces de placas tectónicas y actividad sísmica global.',
+  description: 'Visual monitor of incoming energy by magnetic anomaly, Moon and Sun positions, tectonic plate crossings and global seismic activity.',
   generator: 'v0.app',
   icons: {
     icon: [{ url: '/moon.svg', type: 'image/svg+xml' }],
@@ -26,7 +26,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="es" className="bg-[#0e1116]">
+    <html lang="en" className="bg-[#0e1116]">
       <body className="antialiased">
         {children}
         {process.env.NODE_ENV === 'production' && <Analytics />}
