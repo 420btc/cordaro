@@ -22,10 +22,8 @@ export function nearestQuakeWithin(latitude: number, longitude: number, quakes: 
   return best
 }
 
-export async function fetchEarthquakes(day: Date): Promise<Earthquake[]> {
-  const start = day.toISOString()
-  const end = new Date(day.getTime() + 86400000).toISOString()
-  const url = `https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&starttime=${start}&endtime=${end}&minmagnitude=4&orderby=time`
+async function queryUsgs(start: Date, end: Date): Promise<Earthquake[]> {
+  const url = `https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&starttime=${start.toISOString()}&endtime=${end.toISOString()}&minmagnitude=4&orderby=time`
   try {
     const response = await fetch(url)
     if (!response.ok) throw new Error(`USGS ${response.status}`)
@@ -34,4 +32,12 @@ export async function fetchEarthquakes(day: Date): Promise<Earthquake[]> {
   } catch {
     return []
   }
+}
+
+export function fetchEarthquakes(day: Date): Promise<Earthquake[]> {
+  return queryUsgs(day, new Date(day.getTime() + 86400000))
+}
+
+export function fetchEarthquakesRange(start: Date, end: Date): Promise<Earthquake[]> {
+  return queryUsgs(start, end)
 }

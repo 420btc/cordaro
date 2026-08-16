@@ -12,6 +12,7 @@ import { IntermagnetPanel } from '@/components/IntermagnetPanel'
 import { dateKey, generateAnomalies, type DayData, type Earthquake, type MoonPosition, type PlateCrossing } from '@/lib/types'
 import { generateCelestialData } from '@/lib/dailyData'
 import { fetchEarthquakes, nearestQuakeWithin } from '@/lib/earthquakes'
+import { computeCoincidences } from '@/lib/coincidences'
 import { moonIllumination, moonPhaseKey } from '@/lib/astronomy'
 import { I18nProvider, useI18n, type TFunction } from '@/lib/i18n'
 import { format } from 'date-fns'
@@ -106,6 +107,9 @@ function Dashboard() {
   const celestial = useMemo(() => generateCelestialData(date), [date])
   const [earthquakes, setEarthquakes] = useState<Earthquake[]>([])
   useEffect(() => { let active = true; fetchEarthquakes(date).then((quakes) => { if (active) setEarthquakes(quakes) }); return () => { active = false } }, [date])
+  const [coincidences, setCoincidences] = useState<Record<string, number>>({})
+  const [coincidencesLoading, setCoincidencesLoading] = useState(true)
+  useEffect(() => { let active = true; computeCoincidences(15).then((res) => { if (active) { setCoincidences(res); setCoincidencesLoading(false) } }); return () => { active = false } }, [])
   const anomalies = useMemo(() => generateAnomalies(date, celestial.crossings, earthquakes), [date, celestial.crossings, earthquakes])
   const data = useMemo<DayData>(() => ({ positions: celestial.positions, sunPositions: celestial.sunPositions, crossings: celestial.crossings, earthquakes, anomalies }), [celestial, earthquakes, anomalies])
 
@@ -180,7 +184,7 @@ function Dashboard() {
   return (
     <main className="relative min-h-screen overflow-x-hidden bg-[#0e1116] font-sans text-[#e7eaee]">
       <div className="relative mx-auto flex min-h-screen max-w-[1800px] flex-col gap-4 p-4">
-        <DateControls date={date} live={live} animate={animate} crossingsOnly={crossingsOnly} showAntipode={showAntipode} onDate={setDate} onLive={setLive} onAnimate={setAnimate} onCrossingsOnly={setCrossingsOnly} onAntipode={setShowAntipode} onExport={exportImage} onInfo={() => setShowInfo(true)} />
+        <DateControls date={date} live={live} animate={animate} crossingsOnly={crossingsOnly} showAntipode={showAntipode} onDate={setDate} onLive={setLive} onAnimate={setAnimate} onCrossingsOnly={setCrossingsOnly} onAntipode={setShowAntipode} onExport={exportImage} onInfo={() => setShowInfo(true)} coincidences={coincidences} coincidencesLoading={coincidencesLoading} />
         <XProfile />
         <WorldClocks nextCrossing={nextUpcomingCrossing} />
         <SummaryStrip data={data} summary={summary} />

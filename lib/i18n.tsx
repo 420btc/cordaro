@@ -14,6 +14,7 @@ const es = {
   pauseMoon: 'Pausar luna',
   howItWorks: 'Cómo funciona',
   exportImage: 'Exportar imagen',
+  loading: 'Cargando',
 
   'observers.join': 'Unirse como observador',
   'observers.leave': 'Dejar de observar',
@@ -167,6 +168,7 @@ const en: Record<keyof typeof es, string> = {
   pauseMoon: 'Pause moon',
   howItWorks: 'How it works',
   exportImage: 'Export image',
+  loading: 'Loading',
 
   'observers.join': 'Join as observer',
   'observers.leave': 'Stop observing',
