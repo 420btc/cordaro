@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import dynamic from 'next/dynamic'
 import { toPng } from 'html-to-image'
-import { AlertTriangle, Binoculars, CalendarDays, CheckCircle2, Clock, Compass, Globe2, Info, Layers, Monitor, Moon, Ruler, Sun, X, XCircle, Zap } from 'lucide-react'
+import { AlertTriangle, Binoculars, CalendarDays, CheckCircle2, Clock, Compass, Globe2, Info, Layers, Monitor, Moon, Orbit, Ruler, Sun, X, XCircle, Zap } from 'lucide-react'
 import { CordaroChart } from '@/components/CordaroChart'
 import { CordaroMap } from '@/components/CordaroMap'
 import { DateControls } from '@/components/DateControls'
@@ -13,6 +13,7 @@ import { dateKey, generateAnomalies, type DayData, type Earthquake, type MoonPos
 import { generateCelestialData } from '@/lib/dailyData'
 import { fetchEarthquakes, nearestQuakeWithin } from '@/lib/earthquakes'
 import { computeCoincidences } from '@/lib/coincidences'
+import { calculatePlanetAspects, ALIGNMENT_SYMBOL, type PlanetAspect, type PlanetAlignmentType } from '@/lib/planets'
 import { moonIllumination, moonPhaseKey } from '@/lib/astronomy'
 import { I18nProvider, useI18n, type TFunction } from '@/lib/i18n'
 import { format } from 'date-fns'
@@ -103,6 +104,15 @@ function Dashboard() {
   const [showInfo, setShowInfo] = useState(false)
   const [showMobileNotice, setShowMobileNotice] = useState(false)
   const captureRef = useRef<HTMLDivElement>(null)
+  const [flashedCrossingId, setFlashedCrossingId] = useState<string | null>(null)
+  const flashTimerRef = useRef<number | null>(null)
+  const goToCrossing = (id: string) => {
+    setFlashedCrossingId(id)
+    const el = document.getElementById(id)
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    if (flashTimerRef.current) window.clearTimeout(flashTimerRef.current)
+    flashTimerRef.current = window.setTimeout(() => setFlashedCrossingId(null), 4000)
+  }
 
   const celestial = useMemo(() => generateCelestialData(date), [date])
   const [earthquakes, setEarthquakes] = useState<Earthquake[]>([])
@@ -110,6 +120,7 @@ function Dashboard() {
   const [coincidences, setCoincidences] = useState<Record<string, number>>({})
   const [coincidencesLoading, setCoincidencesLoading] = useState(true)
   useEffect(() => { let active = true; computeCoincidences(15).then((res) => { if (active) { setCoincidences(res); setCoincidencesLoading(false) } }); return () => { active = false } }, [])
+  const planetAlignments = useMemo(() => calculatePlanetAspects(date), [date])
   const anomalies = useMemo(() => generateAnomalies(date, celestial.crossings, earthquakes), [date, celestial.crossings, earthquakes])
   const data = useMemo<DayData>(() => ({ positions: celestial.positions, sunPositions: celestial.sunPositions, crossings: celestial.crossings, earthquakes, anomalies }), [celestial, earthquakes, anomalies])
 
@@ -188,10 +199,11 @@ function Dashboard() {
         <XProfile />
         <WorldClocks nextCrossing={nextUpcomingCrossing} />
         <SummaryStrip data={data} summary={summary} />
-        <CrossingsTimeline crossings={data.crossings} date={date} earthquakes={data.earthquakes} />
+        <PlanetaryAlignments alignments={planetAlignments} crossings={data.crossings} onGoToCrossing={goToCrossing} />
+        <CrossingsTimeline crossings={data.crossings} date={date} earthquakes={data.earthquakes} flashedCrossingId={flashedCrossingId} />
 
         <div ref={captureRef} className="flex flex-col gap-4">
-          <CordaroChart data={data.anomalies} crossings={data.crossings} earthquakes={data.earthquakes} crossingsOnly={crossingsOnly} date={date} />
+          <CordaroChart data={data.anomalies} crossings={data.crossings} earthquakes={data.earthquakes} crossingsOnly={crossingsOnly} date={date} alignments={planetAlignments} />
           <CordaroMap positions={data.positions} sunPositions={data.sunPositions} crossings={data.crossings} showAntipode={showAntipode} animate={animate} nextCrossing={nextCrossing} />
           <section aria-label={t('quakeMap.aria')} className="h-[42vh] min-h-[380px] shrink-0 overflow-hidden rounded-md border border-[#29313b] bg-[#0e1116]">
             <EarthquakeMap earthquakes={data.earthquakes} nextCrossing={nextUpcomingCrossing} />
@@ -252,7 +264,78 @@ function SummaryStrip({ data, summary }: { data: DayData; summary: { mid: MoonPo
   )
 }
 
-function CrossingsTimeline({ crossings, date, earthquakes }: { crossings: PlateCrossing[]; date: Date; earthquakes: Earthquake[] }) {
+function PlanetaryAlignments({ alignments, crossings, onGoToCrossing }: { alignments: PlanetAspect[]; crossings: PlateCrossing[]; onGoToCrossing: (id: string) => void }) {
+  const { t } = useI18n()
+  const [now, setNow] = useState(() => Date.now())
+  useEffect(() => { const timer = window.setInterval(() => setNow(Date.now()), 60000); return () => window.clearInterval(timer) }, [])
+
+  const notable = alignments.filter((a) => a.type != null)
+  const typeColor: Record<PlanetAlignmentType, string> = { conjunction: '#6aa86f', square: '#e0a028', opposition: '#c0564a' }
+  const windowMs = 2 * 3600000
+
+  const dayLabel = (timestamp: number) => {
+    const key = dateKey(new Date(timestamp))
+    const todayKey = dateKey(new Date())
+    const tomorrowKey = dateKey(new Date(Date.now() + 86400000))
+    if (key === todayKey) return t('planets.today')
+    if (key === tomorrowKey) return t('planets.tomorrow')
+    return format(new Date(timestamp), 'dd/MM')
+  }
+
+  const aspectText = (type: PlanetAlignmentType, planet: string) => {
+    if (type === 'conjunction') return t('planets.aspect.conjunction', { planet })
+    if (type === 'square') return t('planets.aspect.square', { planet })
+    return t('planets.aspect.opposition', { planet })
+  }
+
+  return (
+    <section aria-label={t('planets.title')} className="rounded-md border border-[#29313b] bg-[#151a21] p-4 shadow-sm">
+      <header className="mb-3 flex items-center gap-2">
+        <Orbit className="size-4 text-[#b07cd8]" />
+        <div>
+          <h2 className="font-serif text-base font-bold text-[#e7eaee]">{t('planets.title')}</h2>
+          <p className="text-xs text-[#8b94a0]">{t('planets.subtitle')}</p>
+        </div>
+      </header>
+
+      {notable.length === 0 ? (
+        <p className="text-sm text-[#8b94a0]">{t('planets.empty')}</p>
+      ) : (
+        <div className="flex flex-col gap-2">
+          {notable.map((aspect) => {
+            const type = aspect.type as PlanetAlignmentType
+            const countdown = formatCountdown(aspect.timestamp, now, t).label
+            const nearby = crossings
+              .filter((c) => Math.abs(c.timestamp - aspect.timestamp) <= windowMs)
+              .sort((a, b) => Math.abs(a.timestamp - aspect.timestamp) - Math.abs(b.timestamp - aspect.timestamp))[0]
+
+            const inner = (
+              <>
+                <span className="font-mono text-base" style={{ color: typeColor[type] }}>{ALIGNMENT_SYMBOL[type]}</span>
+                <span className="font-serif text-sm font-semibold text-[#e7eaee]">{aspect.planet}</span>
+                <span className="text-xs text-[#c5ccd4]">{aspectText(type, aspect.planet)}</span>
+                <span className="font-mono text-xs text-[#e0a028]">{dayLabel(aspect.timestamp)} {aspect.time} · {countdown}</span>
+                {nearby && <span className="rounded-full bg-[#e0a028] px-2 py-0.5 font-mono text-[10px] font-bold text-[#0e1116]">{t('planets.crossing')} · {nearby.time}</span>}
+              </>
+            )
+
+            return nearby ? (
+              <button key={`${aspect.planet}-${aspect.type}`} type="button" onClick={() => onGoToCrossing(nearby.id)} className="flex w-full flex-wrap items-center gap-x-3 gap-y-1 rounded-md border border-[#e0a028]/50 bg-[#1c232b] px-3 py-2 text-left transition-colors hover:border-[#e0a028] hover:bg-[#29313b]">
+                {inner}
+              </button>
+            ) : (
+              <div key={`${aspect.planet}-${aspect.type}`} className="flex w-full flex-wrap items-center gap-x-3 gap-y-1 rounded-md border border-[#29313b] bg-[#1c232b] px-3 py-2">
+                {inner}
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </section>
+  )
+}
+
+function CrossingsTimeline({ crossings, date, earthquakes, flashedCrossingId }: { crossings: PlateCrossing[]; date: Date; earthquakes: Earthquake[]; flashedCrossingId: string | null }) {
   const { t } = useI18n()
   const isToday = dateKey(date) === dateKey(new Date())
   const [now, setNow] = useState(() => Date.now())
@@ -277,14 +360,14 @@ function CrossingsTimeline({ crossings, date, earthquakes }: { crossings: PlateC
         <p className="text-sm text-[#8b94a0]">{t('crossings.empty')}</p>
       ) : (
         <div className="flex flex-wrap gap-3">
-          {sorted.map((crossing) => <CrossingCard key={crossing.id} crossing={crossing} now={now} isNext={crossing.id === nextId} showCountdown={isToday} earthquakes={earthquakes} />)}
+          {sorted.map((crossing) => <CrossingCard key={crossing.id} crossing={crossing} now={now} isNext={crossing.id === nextId} showCountdown={isToday} earthquakes={earthquakes} flashed={crossing.id === flashedCrossingId} />)}
         </div>
       )}
     </section>
   )
 }
 
-function CrossingCard({ crossing, now, isNext, showCountdown, earthquakes }: { crossing: PlateCrossing; now: number; isNext: boolean; showCountdown: boolean; earthquakes: Earthquake[] }) {
+function CrossingCard({ crossing, now, isNext, showCountdown, earthquakes, flashed }: { crossing: PlateCrossing; now: number; isNext: boolean; showCountdown: boolean; earthquakes: Earthquake[]; flashed: boolean }) {
   const { t } = useI18n()
   const isMoon = crossing.type === 'moon'
   const color = isMoon ? '#c0564a' : '#5b8db8'
@@ -293,13 +376,20 @@ function CrossingCard({ crossing, now, isNext, showCountdown, earthquakes }: { c
   const validated = nearby != null
   const isPast = crossing.timestamp <= now
   const validatedPast = isPast && validated
+  const highlightClass = flashed ? 'border-white ring-4 ring-white shadow-[0_0_40px_rgba(255,255,255,0.8)]' : isNext ? 'border-[#e0a028] ring-2 ring-[#e0a028]/40 shadow-[0_0_22px_rgba(224,160,40,0.28)]' : validatedPast ? 'border-[#a3e635] ring-2 ring-[#a3e635]/60 shadow-[0_0_30px_rgba(163,230,53,0.55)]' : 'border-[#29313b]'
   const badgeClass = tone === 'now' ? 'bg-[#e0a028] text-[#0e1116] ring-2 ring-[#e0a028]/40 animate-pulse' : tone === 'soon' ? 'bg-[#5b8db8] text-white ring-2 ring-[#5b8db8]/40' : 'bg-[#29313b] text-[#8b94a0]'
   const [following, setFollowing] = useState(false)
   const observers = following ? 1 : 0
   return (
-    <div className={`flex-[1_1_280px] min-w-[260px] overflow-hidden rounded-md border bg-[#151a21] shadow-sm ${isNext ? 'border-[#e0a028] ring-2 ring-[#e0a028]/40 shadow-[0_0_22px_rgba(224,160,40,0.28)]' : validatedPast ? 'border-[#a3e635] ring-2 ring-[#a3e635]/60 shadow-[0_0_30px_rgba(163,230,53,0.55)]' : 'border-[#29313b]'}`}>
-      <div className={`relative h-32 w-full overflow-hidden border-b ${isNext ? 'border-[#e0a028]/60' : validatedPast ? 'border-[#6aa86f]/60' : 'border-[#29313b]'}`}>
+    <div id={crossing.id} className={`flex-[1_1_280px] min-w-[260px] overflow-hidden rounded-md border bg-[#151a21] shadow-sm ${highlightClass}`}>
+      <div className={`relative h-32 w-full overflow-hidden border-b ${isNext ? 'border-[#e0a028]/60' : validatedPast ? 'border-[#a3e635]/70' : 'border-[#29313b]'}`}>
         <MiniMap latitude={crossing.latitude} longitude={crossing.longitude} color={color} />
+        {flashed && (
+          <>
+            <span className="pointer-events-none absolute inset-0 z-[450] bg-white/25" />
+            <span className="pointer-events-none absolute inset-0 z-[500] ring-4 ring-inset ring-white" />
+          </>
+        )}
         {isNext && (
           <>
             <span className="pointer-events-none absolute inset-0 z-[500] animate-pulse ring-2 ring-inset ring-[#e0a028]" />

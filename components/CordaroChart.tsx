@@ -3,8 +3,11 @@ import { useMemo } from 'react'
 import { CartesianGrid, ComposedChart, Line, Area, ReferenceLine, Scatter, XAxis, YAxis, Tooltip, ResponsiveContainer, Brush } from 'recharts'
 import type { MagneticAnomaly, PlateCrossing, Earthquake } from '@/lib/types'
 import { useI18n } from '@/lib/i18n'
+import { ALIGNMENT_SYMBOL, type PlanetAspect, type PlanetAlignmentType } from '@/lib/planets'
 
-type Props = { data: MagneticAnomaly[]; crossings: PlateCrossing[]; earthquakes: Earthquake[]; crossingsOnly: boolean; date: Date }
+type Props = { data: MagneticAnomaly[]; crossings: PlateCrossing[]; earthquakes: Earthquake[]; crossingsOnly: boolean; date: Date; alignments: PlanetAspect[] }
+
+const ALIGNMENT_COLOR: Record<PlanetAlignmentType, string> = { conjunction: '#6aa86f', square: '#e0a028', opposition: '#c0564a' }
 
 function Legend() {
   const { t } = useI18n()
@@ -18,7 +21,7 @@ function Legend() {
   )
 }
 
-export function CordaroChart({ data, crossings, earthquakes, crossingsOnly, date }: Props) {
+export function CordaroChart({ data, crossings, earthquakes, crossingsOnly, date, alignments }: Props) {
   const { t } = useI18n()
   const visible = useMemo(() => crossingsOnly ? data.filter((row) => crossings.some((crossing) => Math.abs(row.timestamp - crossing.timestamp) < 3600000)) : data, [data, crossings, crossingsOnly])
   const earthquakePoints = earthquakes.map((quake) => ({ time: quake.time, value: Math.min(9.6, quake.magnitude / 1.1), magnitude: quake.magnitude, place: quake.place }))
@@ -66,6 +69,7 @@ export function CordaroChart({ data, crossings, earthquakes, crossingsOnly, date
             <ReferenceLine y={5} stroke="#d08a3a" strokeWidth={1} strokeDasharray="6 4" label={{ value: t('chart.legend.level5'), position: 'right', fill: '#d08a3a', fontSize: 10 }} />
             {isToday && <ReferenceLine x={nowLabel} stroke="#e7eaee" strokeWidth={1.5} strokeDasharray="4 4" label={{ value: t('countdown.now'), position: 'top', fill: '#e7eaee', fontSize: 10 }} />}
             {crossings.map((crossing) => <ReferenceLine key={crossing.id} x={crossing.time} stroke={crossing.color} strokeWidth={crossing.type === 'moon' ? 1.5 : 1} strokeDasharray={crossing.type === 'moon' ? undefined : '4 3'} label={{ value: `${crossing.time}`, position: 'top', angle: -90, fill: crossing.color, fontSize: 9 }} />)}
+            {alignments.filter((a) => a.type != null).map((alignment, index) => <ReferenceLine key={`planet-${index}`} x={alignment.time} stroke={ALIGNMENT_COLOR[alignment.type!]} strokeWidth={1} strokeDasharray="2 3" label={{ value: `${ALIGNMENT_SYMBOL[alignment.type!]} ${alignment.planet}`, position: 'top', angle: -90, fill: ALIGNMENT_COLOR[alignment.type!], fontSize: 9 }} />)}
             <Area type="monotone" dataKey="energy" stroke="#e0a028" strokeWidth={2.5} fill="url(#energyGradient)" isAnimationActive={false} />
             <Line type="monotone" dataKey="globalRate" stroke="#5b8db8" strokeWidth={2} dot={false} isAnimationActive={false} />
             <Line data={earthquakePoints} dataKey="value" stroke="#8b94a0" strokeWidth={1.5} dot={false} isAnimationActive={false} opacity={0.6} />

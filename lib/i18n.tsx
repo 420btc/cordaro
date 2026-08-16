@@ -53,6 +53,16 @@ const es = {
   'mag.updated': 'actualizado hace',
   'mag.source': 'Datos: INTERMAGNET · BGS',
 
+  'planets.title': 'Alineaciones Luna–planetas',
+  'planets.subtitle': 'Influencers sísmicos del día',
+  'planets.aspect.conjunction': 'Luna y {planet} juntos',
+  'planets.aspect.square': 'Luna y {planet} en ángulo recto',
+  'planets.aspect.opposition': 'Luna y {planet} opuestos',
+  'planets.today': 'hoy',
+  'planets.tomorrow': 'mañana',
+  'planets.crossing': 'cruce',
+  'planets.empty': 'Hoy no hay alineaciones Luna–planeta destacadas',
+
   'kpi.phase': 'Fase lunar',
   'kpi.angle': 'Ángulo Luna–Sol',
   'kpi.angleSub': 'separación angular',
@@ -206,6 +216,16 @@ const en: Record<keyof typeof es, string> = {
   'mag.axisZ': 'nT',
   'mag.updated': 'updated',
   'mag.source': 'Data: INTERMAGNET · BGS',
+
+  'planets.title': 'Moon–planet alignments',
+  'planets.subtitle': 'Seismic influencers of the day',
+  'planets.aspect.conjunction': 'Moon and {planet} together',
+  'planets.aspect.square': 'Moon and {planet} at a right angle',
+  'planets.aspect.opposition': 'Moon and {planet} opposite',
+  'planets.today': 'today',
+  'planets.tomorrow': 'tomorrow',
+  'planets.crossing': 'crossing',
+  'planets.empty': 'No major Moon–planet alignments today',
 
   'kpi.phase': 'Moon phase',
   'kpi.angle': 'Moon–Sun angle',
