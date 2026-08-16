@@ -8,6 +8,7 @@ import { CordaroMap } from '@/components/CordaroMap'
 import { DateControls } from '@/components/DateControls'
 import { WorldClocks } from '@/components/WorldClocks'
 import { XProfile } from '@/components/XProfile'
+import { IntermagnetPanel } from '@/components/IntermagnetPanel'
 import { dateKey, generateAnomalies, type DayData, type Earthquake, type MoonPosition, type PlateCrossing } from '@/lib/types'
 import { generateCelestialData } from '@/lib/dailyData'
 import { fetchEarthquakes } from '@/lib/earthquakes'
@@ -124,12 +125,22 @@ function Dashboard() {
   }, [data.crossings])
 
   const tomorrowCrossings = useMemo(() => generateCelestialData(new Date(date.getTime() + 86400000)).crossings, [date])
+  const [crossingTick, setCrossingTick] = useState(0)
   const nextUpcomingCrossing = useMemo(() => {
     const now = Date.now()
     return [...data.crossings, ...tomorrowCrossings]
       .filter((crossing) => crossing.timestamp > now)
       .sort((a, b) => a.timestamp - b.timestamp)[0]
-  }, [data.crossings, tomorrowCrossings])
+  }, [data.crossings, tomorrowCrossings, crossingTick])
+
+  // Cuando el próximo cruce pasa, se fuerza un recálculo para saltar al siguiente.
+  useEffect(() => {
+    if (!nextUpcomingCrossing) return
+    const delay = nextUpcomingCrossing.timestamp - Date.now()
+    if (delay <= 0) return
+    const timer = window.setTimeout(() => setCrossingTick((k) => k + 1), delay + 1000)
+    return () => window.clearTimeout(timer)
+  }, [nextUpcomingCrossing])
 
   const beepStateRef = useRef<{ timestamp: number; level: number }>({ timestamp: 0, level: 3 })
 
@@ -173,13 +184,15 @@ function Dashboard() {
           <CordaroChart data={data.anomalies} crossings={data.crossings} earthquakes={data.earthquakes} crossingsOnly={crossingsOnly} date={date} />
           <CordaroMap positions={data.positions} sunPositions={data.sunPositions} crossings={data.crossings} showAntipode={showAntipode} animate={animate} nextCrossing={nextCrossing} />
           <section aria-label={t('quakeMap.aria')} className="h-[42vh] min-h-[380px] shrink-0 overflow-hidden rounded-md border border-[#29313b] bg-[#0e1116]">
-            <EarthquakeMap earthquakes={data.earthquakes} nextCrossing={nextCrossing} />
+            <EarthquakeMap earthquakes={data.earthquakes} nextCrossing={nextUpcomingCrossing} />
           </section>
           <footer className="flex items-start gap-2 px-1 pb-1 text-[11px] leading-relaxed text-[#8b94a0]">
             <AlertTriangle className="mt-0.5 size-3.5 shrink-0 text-[#e0a028]" />
             <span>{t('footer.disclaimer')}</span>
           </footer>
         </div>
+
+        <IntermagnetPanel />
       </div>
 
       {showInfo && <InfoModal onClose={() => setShowInfo(false)} />}
