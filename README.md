@@ -20,6 +20,16 @@ Existe otro investigador con el mismo apellido: **Enrique Guillermo Cordaro**, f
 
 ---
 
+## Investigación relacionada: viento solar y sismos
+
+Parte de este proyecto (el panel de **viento solar** y la **validación estadística de cruces**) se apoya en el siguiente estudio revisado por pares:
+
+- **Marchitelli V., Harabaglia P., Troise C., De Natale G.** (2020). *On the correlation between solar activity and large earthquakes worldwide*. Scientific Reports, 10:11495. DOI: [10.1038/s41598-020-67860-3](https://doi.org/10.1038/s41598-020-67860-3).
+
+El estudio analiza 20 años de densidad de protones del viento solar (SOHO/CELIAS) y encuentra correlación con sismos grandes (M ≥ 5.6) con un desfase de un día, proponiendo el efecto piezoeléctrico inverso como posible mecanismo. De aquí se toman el umbral de densidad (≈ 15.5 protones/cm³) y la metodología estadística (tasa relativa de eventos + test de significancia) usados para evaluar los cruces Luna/antípoda.
+
+---
+
 ## Qué muestra
 
 - **Posición real de la Luna y el Sol** a lo largo del día (calculada con `astronomy-engine`).
@@ -82,5 +92,6 @@ Abre [http://localhost:3000](http://localhost:3000).
 
 - **Richard Cordaro** ([@rrichcord](https://x.com/rrichcord)), por el método de "energía entrante" por anomalía magnética que inspira este proyecto.
 - **Enrique Guillermo Cordaro** (Universidad de Chile), por su línea de investigación independiente en geomagnetismo y sismos.
+- **Marchitelli, Harabaglia, Troise & De Natale** (Scientific Reports, 2020), por el estudio sobre correlación entre actividad solar y sismos en el que se basan el panel de viento solar y la validación de cruces.
 - `astronomy-engine` de Don Cross, por los cálculos astronómicos de alta precisión.
 - OpenStreetMap / CARTO por las teselas de los mapas.

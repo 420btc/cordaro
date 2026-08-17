@@ -10,6 +10,7 @@ import { WorldClocks } from '@/components/WorldClocks'
 import { XProfile } from '@/components/XProfile'
 import { IntermagnetPanel } from '@/components/IntermagnetPanel'
 import { SolarWindPanel } from '@/components/SolarWindPanel'
+import { CrossingsValidationPanel } from '@/components/CrossingsValidationPanel'
 import { dateKey, generateAnomalies, type DayData, type Earthquake, type MoonPosition, type PlateCrossing } from '@/lib/types'
 import { generateCelestialData } from '@/lib/dailyData'
 import { fetchEarthquakes, nearestQuakeWithin } from '@/lib/earthquakes'
@@ -217,6 +218,7 @@ function Dashboard() {
 
         <IntermagnetPanel />
         <SolarWindPanel />
+        <CrossingsValidationPanel />
 
         <footer className="flex flex-wrap items-center gap-2 rounded-md border border-[#29313b] bg-[#151a21] px-4 py-3 text-xs">
           <span className="mr-2 font-mono text-[10px] uppercase tracking-widest text-[#8b94a0]">{t('footer.sources')}</span>
