@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import dynamic from 'next/dynamic'
 import { toPng } from 'html-to-image'
-import { AlertTriangle, Binoculars, CalendarDays, CheckCircle2, Clock, Compass, Globe2, Heart, Info, Layers, Monitor, Moon, Orbit, Ruler, Sun, X, XCircle, Zap } from 'lucide-react'
+import { AlertTriangle, Binoculars, CalendarDays, CheckCircle2, Clock, Compass, Eye, Globe2, Heart, Info, Layers, Monitor, Moon, Orbit, Ruler, Sun, X, XCircle, Zap } from 'lucide-react'
 import { CordaroChart } from '@/components/CordaroChart'
 import { CordaroMap } from '@/components/CordaroMap'
 import { DateControls } from '@/components/DateControls'
@@ -11,6 +11,8 @@ import { XProfile } from '@/components/XProfile'
 import { IntermagnetPanel } from '@/components/IntermagnetPanel'
 import { SolarWindPanel } from '@/components/SolarWindPanel'
 import { CrossingsValidationPanel } from '@/components/CrossingsValidationPanel'
+import { WatchModal } from '@/components/WatchModal'
+import { PastCrossingsPopup } from '@/components/PastCrossingsPopup'
 import { dateKey, generateAnomalies, type DayData, type Earthquake, type MoonPosition, type PlateCrossing } from '@/lib/types'
 import { generateCelestialData } from '@/lib/dailyData'
 import { fetchEarthquakes, nearestQuakeWithin } from '@/lib/earthquakes'
@@ -132,6 +134,7 @@ function Dashboard() {
   const [showAntipode, setShowAntipode] = useState(true)
   const [showInfo, setShowInfo] = useState(false)
   const [showMobileNotice, setShowMobileNotice] = useState(false)
+  const [watchCrossing, setWatchCrossing] = useState<PlateCrossing | null>(null)
   const captureRef = useRef<HTMLDivElement>(null)
   const [flashedCrossingId, setFlashedCrossingId] = useState<string | null>(null)
   const flashTimerRef = useRef<number | null>(null)
@@ -229,7 +232,7 @@ function Dashboard() {
         <WorldClocks nextCrossing={nextUpcomingCrossing} />
         <SummaryStrip data={data} summary={summary} />
         <PlanetaryAlignments alignments={planetAlignments} crossings={data.crossings} onGoToCrossing={goToCrossing} />
-        <CrossingsTimeline crossings={data.crossings} date={date} earthquakes={data.earthquakes} flashedCrossingId={flashedCrossingId} />
+        <CrossingsTimeline crossings={data.crossings} date={date} earthquakes={data.earthquakes} flashedCrossingId={flashedCrossingId} onWatch={setWatchCrossing} />
 
         <div ref={captureRef} className="flex flex-col gap-4">
           <CordaroChart data={data.anomalies} crossings={data.crossings} earthquakes={data.earthquakes} crossingsOnly={crossingsOnly} date={date} alignments={planetAlignments} />
@@ -260,6 +263,9 @@ function Dashboard() {
       </div>
 
       {showInfo && <InfoModal onClose={() => setShowInfo(false)} />}
+
+      {watchCrossing && <WatchModal crossing={watchCrossing} onClose={() => setWatchCrossing(null)} />}
+      <PastCrossingsPopup />
 
       {showMobileNotice && (
         <div className="fixed inset-0 z-[1100] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
@@ -377,7 +383,7 @@ function PlanetaryAlignments({ alignments, crossings, onGoToCrossing }: { alignm
   )
 }
 
-function CrossingsTimeline({ crossings, date, earthquakes, flashedCrossingId }: { crossings: PlateCrossing[]; date: Date; earthquakes: Earthquake[]; flashedCrossingId: string | null }) {
+function CrossingsTimeline({ crossings, date, earthquakes, flashedCrossingId, onWatch }: { crossings: PlateCrossing[]; date: Date; earthquakes: Earthquake[]; flashedCrossingId: string | null; onWatch: (crossing: PlateCrossing) => void }) {
   const { t } = useI18n()
   const todayUtc = new Date(Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), new Date().getUTCDate()))
   const showCountdown = date.getTime() >= todayUtc.getTime()
@@ -403,14 +409,14 @@ function CrossingsTimeline({ crossings, date, earthquakes, flashedCrossingId }: 
         <p className="text-sm text-[#8b94a0]">{t('crossings.empty')}</p>
       ) : (
         <div className="flex flex-wrap gap-3">
-          {sorted.map((crossing) => <CrossingCard key={crossing.id} crossing={crossing} now={now} isNext={crossing.id === nextId} showCountdown={showCountdown} earthquakes={earthquakes} flashed={crossing.id === flashedCrossingId} />)}
+          {sorted.map((crossing) => <CrossingCard key={crossing.id} crossing={crossing} now={now} isNext={crossing.id === nextId} showCountdown={showCountdown} earthquakes={earthquakes} flashed={crossing.id === flashedCrossingId} onWatch={onWatch} />)}
         </div>
       )}
     </section>
   )
 }
 
-function CrossingCard({ crossing, now, isNext, showCountdown, earthquakes, flashed }: { crossing: PlateCrossing; now: number; isNext: boolean; showCountdown: boolean; earthquakes: Earthquake[]; flashed: boolean }) {
+function CrossingCard({ crossing, now, isNext, showCountdown, earthquakes, flashed, onWatch }: { crossing: PlateCrossing; now: number; isNext: boolean; showCountdown: boolean; earthquakes: Earthquake[]; flashed: boolean; onWatch: (crossing: PlateCrossing) => void }) {
   const { t } = useI18n()
   const isMoon = crossing.type === 'moon'
   const color = isMoon ? '#c0564a' : '#5b8db8'
@@ -445,6 +451,11 @@ function CrossingCard({ crossing, now, isNext, showCountdown, earthquakes, flash
             <span className="pointer-events-none absolute inset-0 z-[500] animate-pulse ring-2 ring-inset ring-[#e0a028]" />
             <span className="absolute left-2 top-2 z-[500] rounded-full bg-[#e0a028] px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-wide text-[#0e1116] shadow-sm">{t('crossing.nextShort')}</span>
           </>
+        )}
+        {isNext && remaining > 0 && remaining < 300000 && (
+          <button type="button" onClick={() => onWatch(crossing)} className="absolute bottom-2 left-1/2 z-[520] flex -translate-x-1/2 animate-pulse items-center gap-1 rounded-full border-2 border-yellow-200 bg-yellow-400 px-3 py-1 font-mono text-[10px] font-bold uppercase tracking-wide text-[#0e1116] shadow-lg hover:bg-yellow-300">
+            <Eye className="size-3.5" /> {t('watch.button')}
+          </button>
         )}
         {validatedPast && <span className="pointer-events-none absolute inset-0 z-[500] ring-2 ring-inset ring-[#a3e635]/80" />}
         {isPast && (

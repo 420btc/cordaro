@@ -1,6 +1,6 @@
 'use client'
 import { useState } from 'react'
-import { CalendarDays, Download, Info, Pause, Play, RadioTower, RefreshCw } from 'lucide-react'
+import { CalendarDays, Download, Info, Pause, Play, RefreshCw } from 'lucide-react'
 import { format } from 'date-fns'
 import { useI18n, type Lang } from '@/lib/i18n'
 import { DateCalendar } from '@/components/DateCalendar'
@@ -52,7 +52,7 @@ export function DateControls(props: Props) {
   return (
     <header className="flex flex-wrap items-center gap-x-5 gap-y-3 rounded-md border border-[#29313b] bg-[#151a21] px-4 py-3 shadow-sm">
       <div className="flex items-center gap-3">
-        <div className="flex size-9 items-center justify-center rounded bg-[#e0a028] text-[#0e1116]"><RadioTower className="size-5" /></div>
+        <img src="/iconocordaro.png" alt={t('brand')} className="size-9 rounded" />
         <div>
           <p className="font-serif text-sm font-bold leading-tight text-[#e7eaee]">{t('brand')}</p>
           <p className="font-mono text-[10px] uppercase tracking-widest text-[#8b94a0]">{t('subtitle')}</p>

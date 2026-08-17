@@ -22,8 +22,8 @@ export function nearestQuakeWithin(latitude: number, longitude: number, quakes: 
   return best
 }
 
-async function queryUsgs(start: Date, end: Date): Promise<Earthquake[]> {
-  const url = `https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&starttime=${start.toISOString()}&endtime=${end.toISOString()}&minmagnitude=4&orderby=time`
+async function queryUsgs(start: Date, end: Date, minMagnitude = 4): Promise<Earthquake[]> {
+  const url = `https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&starttime=${start.toISOString()}&endtime=${end.toISOString()}&minmagnitude=${minMagnitude}&orderby=time`
   try {
     const response = await fetch(url)
     if (!response.ok) throw new Error(`USGS ${response.status}`)
@@ -40,4 +40,9 @@ export function fetchEarthquakes(day: Date): Promise<Earthquake[]> {
 
 export function fetchEarthquakesRange(start: Date, end: Date): Promise<Earthquake[]> {
   return queryUsgs(start, end)
+}
+
+// Consulta sismos dentro de una ventana temporal acotada (para vigilar un cruce).
+export function fetchEarthquakesWindow(start: Date, end: Date, minMagnitude = 1): Promise<Earthquake[]> {
+  return queryUsgs(start, end, minMagnitude)
 }

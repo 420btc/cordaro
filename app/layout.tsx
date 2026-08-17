@@ -5,10 +5,21 @@ import './globals.css'
 export const metadata: Metadata = {
   title: 'Cordaro Monitor · Incoming Energy by Magnetic Anomaly',
   description: 'Visual monitor of incoming energy by magnetic anomaly, Moon and Sun positions, tectonic plate crossings and global seismic activity.',
-  generator: 'v0.app',
   icons: {
-    icon: [{ url: '/moon.svg', type: 'image/svg+xml' }],
-    apple: '/apple-icon.png',
+    icon: [{ url: '/iconocordaro.png', type: 'image/png' }],
+    apple: '/iconocordaro.png',
+  },
+  openGraph: {
+    title: 'Cordaro Monitor · Incoming Energy by Magnetic Anomaly',
+    description: 'Visual monitor of incoming energy by magnetic anomaly, Moon and Sun positions, tectonic plate crossings and global seismic activity.',
+    type: 'website',
+    images: [{ url: '/cordaro.png', alt: 'Cordaro Monitor · Incoming Energy by Magnetic Anomaly' }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Cordaro Monitor · Incoming Energy by Magnetic Anomaly',
+    description: 'Visual monitor of incoming energy by magnetic anomaly, Moon and Sun positions, tectonic plate crossings and global seismic activity.',
+    images: ['/cordaro.png'],
   },
 }
 
