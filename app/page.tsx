@@ -92,6 +92,33 @@ function crossingAlertLevel(remainingMs: number): number {
   return 3
 }
 
+// Escala de color según cuánto falta para el cruce: rojo (ahora) → ámbar → verde → azul (lejos).
+function crossingHeat(remainingMs: number): { r: number; g: number; b: number } {
+  if (remainingMs <= 0) return { r: 139, g: 148, b: 160 } // gris para cruces ya pasados
+  const minutes = remainingMs / 60000
+  const stops = [
+    { at: 0, rgb: [198, 86, 74] },     // rojo  #c0564a
+    { at: 10, rgb: [224, 160, 40] },   // ámbar #e0a028
+    { at: 60, rgb: [106, 168, 111] },  // verde #6aa86f
+    { at: 360, rgb: [91, 141, 184] },  // azul  #5b8db8
+  ]
+  if (minutes >= stops[stops.length - 1].at) return { r: 91, g: 141, b: 184 }
+  let lo = stops[0]
+  let hi = stops[stops.length - 1]
+  for (let i = 0; i < stops.length - 1; i++) {
+    if (minutes >= stops[i].at && minutes <= stops[i + 1].at) {
+      lo = stops[i]
+      hi = stops[i + 1]
+      break
+    }
+  }
+  const f = (minutes - lo.at) / (hi.at - lo.at)
+  const r = Math.round(lo.rgb[0] + (hi.rgb[0] - lo.rgb[0]) * f)
+  const g = Math.round(lo.rgb[1] + (hi.rgb[1] - lo.rgb[1]) * f)
+  const b = Math.round(lo.rgb[2] + (hi.rgb[2] - lo.rgb[2]) * f)
+  return { r, g, b }
+}
+
 export default function Page() {
   return <I18nProvider><Dashboard /></I18nProvider>
 }
@@ -387,13 +414,20 @@ function CrossingCard({ crossing, now, isNext, showCountdown, earthquakes, flash
   const { t } = useI18n()
   const isMoon = crossing.type === 'moon'
   const color = isMoon ? '#c0564a' : '#5b8db8'
-  const { label, tone } = formatCountdown(crossing.timestamp, now, t)
+  const { label } = formatCountdown(crossing.timestamp, now, t)
+  const remaining = crossing.timestamp - now
+  const heat = crossingHeat(remaining)
   const nearby = nearestQuakeWithin(crossing.latitude, crossing.longitude, earthquakes, 100)
   const validated = nearby != null
   const isPast = crossing.timestamp <= now
   const validatedPast = isPast && validated
   const highlightClass = flashed ? 'border-white ring-4 ring-white shadow-[0_0_40px_rgba(255,255,255,0.8)]' : isNext ? 'border-[#e0a028] ring-2 ring-[#e0a028]/40 shadow-[0_0_22px_rgba(224,160,40,0.28)]' : validatedPast ? 'border-[#a3e635] ring-2 ring-[#a3e635]/60 shadow-[0_0_30px_rgba(163,230,53,0.55)]' : 'border-[#29313b]'
-  const badgeClass = tone === 'now' ? 'bg-[#e0a028] text-[#0e1116] ring-2 ring-[#e0a028]/40 animate-pulse' : tone === 'soon' ? 'bg-[#5b8db8] text-white ring-2 ring-[#5b8db8]/40' : 'bg-[#29313b] text-[#8b94a0]'
+  const isNow = !isPast && remaining < 30000
+  const badgeStyle = {
+    background: `rgba(${heat.r}, ${heat.g}, ${heat.b}, ${isPast ? 0.08 : 0.18})`,
+    border: `1px solid rgba(${heat.r}, ${heat.g}, ${heat.b}, 0.55)`,
+    color: `rgb(${heat.r}, ${heat.g}, ${heat.b})`,
+  }
   const [following, setFollowing] = useState(false)
   const observers = following ? 1 : 0
   return (
@@ -433,7 +467,7 @@ function CrossingCard({ crossing, now, isNext, showCountdown, earthquakes, flash
       <div className="p-3">
         <div className="flex items-center justify-between gap-2">
           <span className="font-mono text-lg font-bold text-[#e7eaee]">{crossing.time}</span>
-          {showCountdown && <span className={`rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide ${badgeClass}`}>{label}</span>}
+          {showCountdown && <span style={badgeStyle} className={`rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide ${isNow ? 'animate-pulse' : ''}`}>{label}</span>}
         </div>
         {showCountdown && isNext && <p className="mt-1 font-mono text-[10px] font-bold uppercase tracking-wider text-[#e0a028]">{t('crossing.next')}</p>}
         <p className="mt-1 font-serif text-sm font-semibold text-[#e7eaee]">{isMoon ? t('crossing.moonCrosses') : t('crossing.antipodeCrosses')}</p>

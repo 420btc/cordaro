@@ -20,7 +20,7 @@ export function CrossingsValidationPanel() {
     let active = true
     setStatus('loading')
     const controller = new AbortController()
-    const timer = window.setTimeout(() => controller.abort(), 30000)
+    const timer = window.setTimeout(() => controller.abort(), 60000)
     const params = new URLSearchParams({ days: String(days), window: String(windowHours) })
     fetch(`/api/validate-crossings?${params.toString()}`, { signal: controller.signal })
       .then((res) => { if (!res.ok) throw new Error() ; return res.json() })
