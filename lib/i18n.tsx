@@ -53,6 +53,29 @@ const es = {
   'mag.updated': 'actualizado hace',
   'mag.source': 'Datos: INTERMAGNET · BGS',
 
+  'sw.title': 'Viento solar · protones',
+  'sw.subtitle': 'Densidad y velocidad del viento solar · umbral 15.5 cm⁻³ (Marchitelli 2020)',
+  'sw.realtime': 'Tiempo real',
+  'sw.historical': 'Histórico',
+  'sw.loading': 'Cargando datos…',
+  'sw.error': 'Sin datos de viento solar',
+  'sw.refresh': 'Actualizar',
+  'sw.density': 'Densidad',
+  'sw.speed': 'Velocidad',
+  'sw.flux': 'Flujo',
+  'sw.dynPressure': 'Presión dinámica',
+  'sw.threshold': 'Umbral 15.5',
+  'sw.spectrum': 'Espectro FFT de densidad',
+  'sw.axisTime': 'Tiempo (UTC)',
+  'sw.axisDensity': 'cm⁻³',
+  'sw.axisSpeed': 'km/s',
+  'sw.peakOngoing': 'Pico en curso',
+  'sw.peakWindow': 'Ventana 24 h activa',
+  'sw.peakNone': 'Sin pico reciente',
+  'sw.date': 'Fecha',
+  'sw.last': 'Último dato:',
+  'sw.source': 'Datos: NOAA SWPC · SOHO CELIAS',
+
   'planets.title': 'Alineaciones Luna–planetas',
   'planets.subtitle': 'Influencers sísmicos del día',
   'planets.aspect.conjunction': 'Luna y {planet} juntos',
@@ -167,8 +190,12 @@ const es = {
   'info.thanks.p1': 'Esta app es un homenaje a Richard Cordaro. Todo lo que ves se basa en su metodología, sus datos de INTERMAGNET y su trabajo divulgativo en X.',
   'info.thanks.p2': 'Gracias por compartir tu investigación:',
 
+  'info.credit.title': 'Autor',
+  'info.credit.p1': 'Web creada por Carlos Freire.',
+
   'footer.disclaimer': 'Posiciones de la Luna y el Sol calculadas con astronomy-engine; sismos reales de USGS. La energía entrante es una estimación basada en la posición lunar y los cruces de placas.',
   'footer.sources': 'Fuentes',
+  'footer.createdBy': 'Creada por',
 }
 
 const en: Record<keyof typeof es, string> = {
@@ -220,6 +247,29 @@ const en: Record<keyof typeof es, string> = {
   'mag.axisZ': 'nT',
   'mag.updated': 'updated',
   'mag.source': 'Data: INTERMAGNET · BGS',
+
+  'sw.title': 'Solar wind · protons',
+  'sw.subtitle': 'Solar wind density and speed · 15.5 cm⁻³ threshold (Marchitelli 2020)',
+  'sw.realtime': 'Real time',
+  'sw.historical': 'Historical',
+  'sw.loading': 'Loading data…',
+  'sw.error': 'No solar wind data',
+  'sw.refresh': 'Refresh',
+  'sw.density': 'Density',
+  'sw.speed': 'Speed',
+  'sw.flux': 'Flux',
+  'sw.dynPressure': 'Dynamic pressure',
+  'sw.threshold': '15.5 threshold',
+  'sw.spectrum': 'Density FFT spectrum',
+  'sw.axisTime': 'Time (UTC)',
+  'sw.axisDensity': 'cm⁻³',
+  'sw.axisSpeed': 'km/s',
+  'sw.peakOngoing': 'Peak ongoing',
+  'sw.peakWindow': '24h window active',
+  'sw.peakNone': 'No recent peak',
+  'sw.date': 'Date',
+  'sw.last': 'Last data:',
+  'sw.source': 'Data: NOAA SWPC · SOHO CELIAS',
 
   'planets.title': 'Moon–planet alignments',
   'planets.subtitle': 'Seismic influencers of the day',
@@ -335,8 +385,12 @@ const en: Record<keyof typeof es, string> = {
   'info.thanks.p1': 'This app is a tribute to Richard Cordaro. Everything you see is built on his methodology, his INTERMAGNET data and his outreach work on X.',
   'info.thanks.p2': 'Thank you for sharing your research:',
 
+  'info.credit.title': 'Author',
+  'info.credit.p1': 'Website created by Carlos Freire.',
+
   'footer.disclaimer': "Moon and Sun positions calculated with astronomy-engine; quakes are real USGS data. Incoming energy is an estimate based on lunar position and plate crossings.",
   'footer.sources': 'Sources',
+  'footer.createdBy': 'Created by',
 }
 
 const dictionaries: Record<Lang, Record<keyof typeof es, string>> = { es, en }

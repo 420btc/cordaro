@@ -9,6 +9,7 @@ import { DateControls } from '@/components/DateControls'
 import { WorldClocks } from '@/components/WorldClocks'
 import { XProfile } from '@/components/XProfile'
 import { IntermagnetPanel } from '@/components/IntermagnetPanel'
+import { SolarWindPanel } from '@/components/SolarWindPanel'
 import { dateKey, generateAnomalies, type DayData, type Earthquake, type MoonPosition, type PlateCrossing } from '@/lib/types'
 import { generateCelestialData } from '@/lib/dailyData'
 import { fetchEarthquakes, nearestQuakeWithin } from '@/lib/earthquakes'
@@ -215,6 +216,7 @@ function Dashboard() {
         </div>
 
         <IntermagnetPanel />
+        <SolarWindPanel />
 
         <footer className="flex flex-wrap items-center gap-2 rounded-md border border-[#29313b] bg-[#151a21] px-4 py-3 text-xs">
           <span className="mr-2 font-mono text-[10px] uppercase tracking-widest text-[#8b94a0]">{t('footer.sources')}</span>
@@ -223,6 +225,8 @@ function Dashboard() {
           <a href="https://intermagnet.org" target="_blank" rel="noreferrer" className="rounded-full border border-[#e0a028]/50 bg-[#e0a028]/10 px-3 py-1 font-semibold text-[#e0a028] transition-colors hover:bg-[#e0a028]/20 hover:text-[#ffffff]">INTERMAGNET</a>
           <a href="https://earthquake.usgs.gov" target="_blank" rel="noreferrer" className="rounded-full border border-[#e0a028]/50 bg-[#e0a028]/10 px-3 py-1 font-semibold text-[#e0a028] transition-colors hover:bg-[#e0a028]/20 hover:text-[#ffffff]">USGS Earthquakes</a>
           <a href="https://github.com/cosinekitty/astronomy" target="_blank" rel="noreferrer" className="rounded-full border border-[#e0a028]/50 bg-[#e0a028]/10 px-3 py-1 font-semibold text-[#e0a028] transition-colors hover:bg-[#e0a028]/20 hover:text-[#ffffff]">astronomy-engine</a>
+          <span className="text-[#8b94a0]">{t('footer.createdBy')}</span>
+          <a href="https://carlosfr.es" target="_blank" rel="noreferrer" className="rounded-full border border-[#5b8db8]/50 bg-[#5b8db8]/10 px-3 py-1 font-semibold text-[#5b8db8] transition-colors hover:bg-[#5b8db8]/20 hover:text-[#ffffff]">Carlos Freire · carlosfr.es</a>
         </footer>
       </div>
 
@@ -346,12 +350,13 @@ function PlanetaryAlignments({ alignments, crossings, onGoToCrossing }: { alignm
 
 function CrossingsTimeline({ crossings, date, earthquakes, flashedCrossingId }: { crossings: PlateCrossing[]; date: Date; earthquakes: Earthquake[]; flashedCrossingId: string | null }) {
   const { t } = useI18n()
-  const isToday = dateKey(date) === dateKey(new Date())
+  const todayUtc = new Date(Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), new Date().getUTCDate()))
+  const showCountdown = date.getTime() >= todayUtc.getTime()
   const [now, setNow] = useState(() => Date.now())
-  useEffect(() => { if (!isToday) return; const timer = window.setInterval(() => setNow(Date.now()), 1000); return () => window.clearInterval(timer) }, [isToday])
+  useEffect(() => { if (!showCountdown) return; const timer = window.setInterval(() => setNow(Date.now()), 1000); return () => window.clearInterval(timer) }, [showCountdown])
 
   const sorted = useMemo(() => [...crossings].sort((a, b) => a.timestamp - b.timestamp), [crossings])
-  const nextId = isToday ? sorted.find((crossing) => crossing.timestamp > now)?.id : undefined
+  const nextId = showCountdown ? sorted.find((crossing) => crossing.timestamp > now)?.id : undefined
 
   return (
     <section aria-label={t('crossings.title')} className="rounded-md border border-[#29313b] bg-[#151a21] p-4 shadow-sm">
@@ -369,7 +374,7 @@ function CrossingsTimeline({ crossings, date, earthquakes, flashedCrossingId }: 
         <p className="text-sm text-[#8b94a0]">{t('crossings.empty')}</p>
       ) : (
         <div className="flex flex-wrap gap-3">
-          {sorted.map((crossing) => <CrossingCard key={crossing.id} crossing={crossing} now={now} isNext={crossing.id === nextId} showCountdown={isToday} earthquakes={earthquakes} flashed={crossing.id === flashedCrossingId} />)}
+          {sorted.map((crossing) => <CrossingCard key={crossing.id} crossing={crossing} now={now} isNext={crossing.id === nextId} showCountdown={showCountdown} earthquakes={earthquakes} flashed={crossing.id === flashedCrossingId} />)}
         </div>
       )}
     </section>
@@ -478,6 +483,13 @@ function InfoModal({ onClose }: { onClose: () => void }) {
             <p className="text-[#8b94a0]">
               {t('info.thanks.p2')}{' '}
               <a href="https://x.com/rrichcord" target="_blank" rel="noreferrer" className="text-[#e0a028] underline decoration-[#e0a028]/50 underline-offset-2 hover:text-[#e7eaee]">@rrichcord</a>
+            </p>
+          </InfoSection>
+
+          <InfoSection icon={Compass} tint="text-[#5b8db8]" title={t('info.credit.title')}>
+            <p>
+              {t('info.credit.p1')}{' '}
+              <a href="https://carlosfr.es" target="_blank" rel="noreferrer" className="text-[#e0a028] underline decoration-[#e0a028]/50 underline-offset-2 hover:text-[#e7eaee]">carlosfr.es</a>
             </p>
           </InfoSection>
 
