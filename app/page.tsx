@@ -6,6 +6,7 @@ import { AlertTriangle, Binoculars, CalendarDays, CheckCircle2, Clock, Compass, 
 import { CordaroChart } from '@/components/CordaroChart'
 import { CordaroMap } from '@/components/CordaroMap'
 import { DateControls } from '@/components/DateControls'
+import { Hero } from '@/components/Hero'
 import { WorldClocks } from '@/components/WorldClocks'
 import { XProfile } from '@/components/XProfile'
 import { IntermagnetPanel } from '@/components/IntermagnetPanel'
@@ -227,6 +228,7 @@ function Dashboard() {
   return (
     <main className="relative min-h-screen overflow-x-hidden bg-[#0e1116] font-sans text-[#e7eaee]">
       <div className="relative mx-auto flex min-h-screen max-w-[1800px] flex-col gap-4 p-4">
+        <Hero />
         <DateControls date={date} live={live} animate={animate} crossingsOnly={crossingsOnly} showAntipode={showAntipode} onDate={setDate} onLive={setLive} onAnimate={setAnimate} onCrossingsOnly={setCrossingsOnly} onAntipode={setShowAntipode} onExport={exportImage} onInfo={() => setShowInfo(true)} coincidences={coincidences} coincidencesLoading={coincidencesLoading} />
         <XProfile />
         <WorldClocks nextCrossing={nextUpcomingCrossing} />

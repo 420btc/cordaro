@@ -16,6 +16,9 @@ const es = {
   exportImage: 'Exportar imagen',
   loading: 'Cargando',
 
+  'hero.expand': 'Abrir banner',
+  'hero.collapse': 'Cerrar banner',
+
   'observers.join': 'Unirse como observador',
   'observers.leave': 'Dejar de observar',
   'observers.label': 'observadores',
@@ -244,6 +247,9 @@ const en: Record<keyof typeof es, string> = {
   howItWorks: 'How it works',
   exportImage: 'Export image',
   loading: 'Loading',
+
+  'hero.expand': 'Open banner',
+  'hero.collapse': 'Close banner',
 
   'observers.join': 'Join as observer',
   'observers.leave': 'Stop observing',
