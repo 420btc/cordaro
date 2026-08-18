@@ -5,7 +5,7 @@ import { CartesianGrid, Line, LineChart, ReferenceLine, ResponsiveContainer, Too
 import { format } from 'date-fns'
 import { useI18n } from '@/lib/i18n'
 import { fftSpectrum } from '@/lib/fft'
-import { analyzePeaks, dynamicPressureOf, fetchSolarWind, fluxOf, PROTON_THRESHOLD, type SolarWindPoint } from '@/lib/solarWind'
+import { analyzePeaks, dynamicPressureOf, fetchGeomagnetic, fetchSolarWind, fluxOf, gScaleOf, PROTON_THRESHOLD, type GeomagneticData, type SolarWindPoint } from '@/lib/solarWind'
 
 type Status = 'loading' | 'ready' | 'error'
 type Mode = 'rtsw' | 'soho'
@@ -13,6 +13,7 @@ type Mode = 'rtsw' | 'soho'
 const MIN_POINTS = 16
 const DENSITY_COLOR = '#6aa86f'
 const SPEED_COLOR = '#5b8db8'
+const GEO_COLORS = ['#6aa86f', '#a8b04a', '#e0a028', '#d08a3a', '#c0564a', '#e5484d']
 
 function downsample<T>(arr: T[], max: number): T[] {
   if (arr.length <= max) return arr
@@ -45,6 +46,7 @@ export function SolarWindPanel() {
   const [points, setPoints] = useState<SolarWindPoint[]>([])
   const [dateStr, setDateStr] = useState('2026-06-07')
   const [refreshKey, setRefreshKey] = useState(0)
+  const [geo, setGeo] = useState<GeomagneticData | null>(null)
 
   useEffect(() => {
     let active = true
@@ -77,6 +79,14 @@ export function SolarWindPanel() {
     const timer = window.setInterval(() => setRefreshKey((k) => k + 1), 10 * 60000)
     return () => window.clearInterval(timer)
   }, [mode])
+
+  useEffect(() => {
+    let active = true
+    const load = () => { fetchGeomagnetic().then((d) => { if (active) setGeo(d) }).catch(() => {}) }
+    load()
+    const timer = window.setInterval(load, 30 * 60000)
+    return () => { active = false; window.clearInterval(timer) }
+  }, [])
 
   const sampleMinutes = mode === 'rtsw' ? 1 : 5
 
@@ -128,6 +138,12 @@ export function SolarWindPanel() {
     ]
   }, [current, t])
 
+  const geomagnetic = useMemo(() => {
+    if (!geo || geo.kp == null) return null
+    return { kp: geo.kp, time: geo.time, g: gScaleOf(geo.kp) }
+  }, [geo])
+  const geoLabels = useMemo(() => [t('geo.g0'), t('geo.g1'), t('geo.g2'), t('geo.g3'), t('geo.g4'), t('geo.g5')], [t])
+
   return (
     <section className="rounded-md border border-[#29313b] bg-[#151a21] p-4 shadow-sm">
       <header className="mb-3 flex flex-wrap items-center justify-between gap-2">
@@ -146,6 +162,21 @@ export function SolarWindPanel() {
           <button type="button" onClick={() => setRefreshKey((k) => k + 1)} className="flex h-8 items-center gap-1.5 rounded border border-[#29313b] bg-[#1c232b] px-3 text-xs font-semibold text-[#e7eaee] hover:bg-[#29313b]"><RefreshCw className="size-3.5" /> {t('sw.refresh')}</button>
         </div>
       </header>
+
+      {geomagnetic && (
+        <div
+          className="mb-3 flex flex-wrap items-center gap-3 rounded-md border px-3 py-2.5"
+          style={{ borderColor: `${GEO_COLORS[geomagnetic.g]}66`, background: `${GEO_COLORS[geomagnetic.g]}12` }}
+          role="status"
+          aria-label={t('geo.title')}
+        >
+          <span className="font-serif text-3xl font-bold leading-none" style={{ color: GEO_COLORS[geomagnetic.g] }}>G{geomagnetic.g}</span>
+          <div className="min-w-0">
+            <p className="font-serif text-sm font-semibold text-[#e7eaee]">{geoLabels[geomagnetic.g]}</p>
+            <p className="font-mono text-[10px] text-[#8b94a0]">Kp {geomagnetic.kp.toFixed(2)} · {geomagnetic.time ? format(new Date(geomagnetic.time), "dd/MM HH:mm 'UTC'") : '—'}</p>
+          </div>
+        </div>
+      )}
 
       {mode === 'soho' && (
         <div className="mb-3 flex items-center gap-2">

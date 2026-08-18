@@ -23,6 +23,25 @@ export async function fetchSolarWind(source: 'rtsw' | 'soho', start?: string, en
   return res.json() as Promise<SolarWindData>
 }
 
+export type GeomagneticData = { kp: number | null; time: string }
+
+// Escala NOAA G (tormentas geomagnéticas) a partir del Kp planetario estimado.
+// G0 = calma, G1 = menor, ... G5 = extrema.
+export function gScaleOf(kp: number): number {
+  if (kp >= 9) return 5
+  if (kp >= 8) return 4
+  if (kp >= 7) return 3
+  if (kp >= 6) return 2
+  if (kp >= 5) return 1
+  return 0
+}
+
+export async function fetchGeomagnetic(): Promise<GeomagneticData> {
+  const res = await fetch('/api/solarwind?source=kp')
+  if (!res.ok) throw new Error(`Geomagnetic ${res.status}`)
+  return res.json() as Promise<GeomagneticData>
+}
+
 export type PeakStatus = { currentlyAbove: boolean; lastDrop: number | null; lastPeak: number | null }
 
 // Detecta los picos de densidad: cuándo cruza por encima del umbral y cuándo

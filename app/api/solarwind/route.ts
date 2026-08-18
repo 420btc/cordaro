@@ -6,6 +6,7 @@ export const dynamic = 'force-dynamic'
 const FILL = -1.0e31
 
 type RawRtsw = { time_tag: string; proton_density: number | null; proton_speed: number | null }
+type RawKp = { time_tag: string; Kp: number | null }
 
 function valid(v: number | null | undefined): number | null {
   if (typeof v !== 'number' || !Number.isFinite(v) || v <= FILL / 2) return null
@@ -27,6 +28,17 @@ async function fetchRtsw() {
     .filter((p) => Number.isFinite(p.timestamp) && p.timestamp >= cutoff && (p.density != null || p.speed != null))
     .sort((a, b) => a.timestamp - b.timestamp)
   return { source: 'rtsw', points }
+}
+
+async function fetchKp() {
+  const res = await fetch('https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json', { cache: 'no-store' })
+  if (!res.ok) throw new Error(`NOAA ${res.status}`)
+  const raw = (await res.json()) as RawKp[]
+  const valid = raw
+    .map((r) => ({ time: r.time_tag, kp: typeof r.Kp === 'number' && Number.isFinite(r.Kp) ? r.Kp : null }))
+    .filter((p): p is { time: string; kp: number } => p.kp != null)
+  const last = valid[valid.length - 1]
+  return { kp: last?.kp ?? null, time: last?.time ?? '' }
 }
 
 async function fetchSoho(start: string, end: string) {
@@ -55,6 +67,10 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const source = searchParams.get('source') ?? 'rtsw'
   try {
+    if (source === 'kp') {
+      const data = await fetchKp()
+      return new Response(JSON.stringify(data), { status: 200, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=1800' } })
+    }
     if (source === 'soho') {
       const start = searchParams.get('start')
       const end = searchParams.get('end')

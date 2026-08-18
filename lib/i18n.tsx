@@ -79,6 +79,14 @@ const es = {
   'sw.last': 'Último dato:',
   'sw.source': 'Datos: NOAA SWPC · SOHO CELIAS',
 
+  'geo.title': 'Tormenta geomagnética',
+  'geo.g0': 'Sin tormenta (calma)',
+  'geo.g1': 'Tormenta menor',
+  'geo.g2': 'Tormenta moderada',
+  'geo.g3': 'Tormenta fuerte',
+  'geo.g4': 'Tormenta severa',
+  'geo.g5': 'Tormenta extrema',
+
   'cv.title': 'Validación estadística de cruces',
   'cv.subtitle': '¿Los cruces Luna/antípoda predicen sismos mejor que el azar?',
   'cv.run': 'Analizar',
@@ -310,6 +318,14 @@ const en: Record<keyof typeof es, string> = {
   'sw.date': 'Date',
   'sw.last': 'Last data:',
   'sw.source': 'Data: NOAA SWPC · SOHO CELIAS',
+
+  'geo.title': 'Geomagnetic storm',
+  'geo.g0': 'No storm (quiet)',
+  'geo.g1': 'Minor storm',
+  'geo.g2': 'Moderate storm',
+  'geo.g3': 'Strong storm',
+  'geo.g4': 'Severe storm',
+  'geo.g5': 'Extreme storm',
 
   'cv.title': 'Crossings statistical validation',
   'cv.subtitle': 'Do Moon/antipode crossings predict quakes better than chance?',
