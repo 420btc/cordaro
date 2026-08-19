@@ -11,6 +11,7 @@ import { WorldClocks } from '@/components/WorldClocks'
 import { XProfile } from '@/components/XProfile'
 import { IntermagnetPanel } from '@/components/IntermagnetPanel'
 import { SolarWindPanel } from '@/components/SolarWindPanel'
+import { SchumannPanel } from '@/components/SchumannPanel'
 import { CrossingsValidationPanel } from '@/components/CrossingsValidationPanel'
 import { WatchModal } from '@/components/WatchModal'
 import { PastCrossingsPopup } from '@/components/PastCrossingsPopup'
@@ -250,6 +251,7 @@ function Dashboard() {
 
         <IntermagnetPanel />
         <SolarWindPanel />
+        <SchumannPanel />
         <CrossingsValidationPanel />
 
         <footer className="flex flex-wrap items-center gap-2 rounded-md border border-[#29313b] bg-[#151a21] px-4 py-3 text-xs">
