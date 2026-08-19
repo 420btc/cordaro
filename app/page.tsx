@@ -17,7 +17,7 @@ import { WatchModal } from '@/components/WatchModal'
 import { PastCrossingsPopup } from '@/components/PastCrossingsPopup'
 import { dateKey, generateAnomalies, type DayData, type Earthquake, type MoonPosition, type PlateCrossing } from '@/lib/types'
 import { generateCelestialData } from '@/lib/dailyData'
-import { fetchEarthquakes, nearestQuakeWithin } from '@/lib/earthquakes'
+import { fetchEarthquakes, nearestQuakeWithinWindow } from '@/lib/earthquakes'
 import { computeCoincidences } from '@/lib/coincidences'
 import { calculatePlanetAspects, ALIGNMENT_SYMBOL, type PlanetAspect, type PlanetAlignmentType } from '@/lib/planets'
 import { moonIllumination, moonPhaseKey } from '@/lib/astronomy'
@@ -427,11 +427,12 @@ function CrossingCard({ crossing, now, isNext, showCountdown, earthquakes, flash
   const { label } = formatCountdown(crossing.timestamp, now, t)
   const remaining = crossing.timestamp - now
   const heat = crossingHeat(remaining)
-  const nearby = nearestQuakeWithin(crossing.latitude, crossing.longitude, earthquakes, 100)
+  const nearby = nearestQuakeWithinWindow(crossing.latitude, crossing.longitude, earthquakes, 100, crossing.timestamp)
   const validated = nearby != null
   const isPast = crossing.timestamp <= now
   const validatedPast = isPast && validated
-  const highlightClass = flashed ? 'border-white ring-4 ring-white shadow-[0_0_40px_rgba(255,255,255,0.8)]' : isNext ? 'border-[#e0a028] ring-2 ring-[#e0a028]/40 shadow-[0_0_22px_rgba(224,160,40,0.28)]' : validatedPast ? 'border-[#a3e635] ring-2 ring-[#a3e635]/60 shadow-[0_0_30px_rgba(163,230,53,0.55)]' : 'border-[#29313b]'
+  const inWindow = Math.abs(crossing.timestamp - now) <= 3600000
+  const highlightClass = flashed ? 'border-white ring-4 ring-white shadow-[0_0_40px_rgba(255,255,255,0.8)]' : isNext ? 'border-[#e0a028] ring-2 ring-[#e0a028]/40 shadow-[0_0_22px_rgba(224,160,40,0.28)]' : inWindow ? 'border-[#5b8db8] ring-2 ring-[#5b8db8]/40 shadow-[0_0_22px_rgba(91,141,184,0.28)]' : validatedPast ? 'border-[#a3e635] ring-2 ring-[#a3e635]/60 shadow-[0_0_30px_rgba(163,230,53,0.55)]' : 'border-[#29313b]'
   const isNow = !isPast && remaining < 30000
   const badgeStyle = {
     background: `rgba(${heat.r}, ${heat.g}, ${heat.b}, ${isPast ? 0.08 : 0.18})`,
@@ -442,7 +443,7 @@ function CrossingCard({ crossing, now, isNext, showCountdown, earthquakes, flash
   const observers = following ? 1 : 0
   return (
     <div id={crossing.id} className={`flex-[1_1_280px] min-w-[260px] overflow-hidden rounded-md border bg-[#151a21] shadow-sm ${highlightClass}`}>
-      <div className={`relative h-32 w-full overflow-hidden border-b ${isNext ? 'border-[#e0a028]/60' : validatedPast ? 'border-[#a3e635]/70' : 'border-[#29313b]'}`}>
+      <div className={`relative h-32 w-full overflow-hidden border-b ${isNext ? 'border-[#e0a028]/60' : inWindow ? 'border-[#5b8db8]/70' : validatedPast ? 'border-[#a3e635]/70' : 'border-[#29313b]'}`}>
         <MiniMap latitude={crossing.latitude} longitude={crossing.longitude} color={color} />
         {flashed && (
           <>
@@ -461,21 +462,36 @@ function CrossingCard({ crossing, now, isNext, showCountdown, earthquakes, flash
             <Eye className="size-3.5" /> {t('watch.button')}
           </button>
         )}
-        {validatedPast && <span className="pointer-events-none absolute inset-0 z-[500] ring-2 ring-inset ring-[#a3e635]/80" />}
-        {isPast && (
+        {validatedPast && !inWindow && <span className="pointer-events-none absolute inset-0 z-[500] ring-2 ring-inset ring-[#a3e635]/80" />}
+        {inWindow && !isNext && <span className="pointer-events-none absolute inset-0 z-[500] ring-2 ring-inset ring-[#5b8db8]/80" />}
+        {(isPast || inWindow) && (
           <div className="absolute right-2 top-2 z-[500]">
-            <div className="group relative">
-              <div className={`flex items-center gap-1 rounded-full border px-1.5 py-0.5 backdrop-blur-sm ${validated ? 'border-[#6aa86f]/50 bg-[#0e1116]/85' : 'border-[#c0564a]/50 bg-[#0e1116]/85'}`}>
-                {validated ? <CheckCircle2 className="size-3.5 text-[#6aa86f]" /> : <XCircle className="size-3.5 text-[#c0564a]" />}
-                <Info className="size-3 text-[#8b94a0]" />
+            {inWindow ? (
+              <div className="group relative">
+                <div className="flex items-center gap-1 rounded-full border border-[#5b8db8]/60 bg-[#0e1116]/85 px-1.5 py-0.5 backdrop-blur-sm">
+                  <Clock className="size-3.5 text-[#5b8db8]" />
+                  <span className="font-mono text-[9px] font-bold uppercase tracking-wide text-[#5b8db8]">{t('crossing.window')}</span>
+                  <Info className="size-3 text-[#8b94a0]" />
+                </div>
+                <div className="pointer-events-none absolute right-0 top-7 z-[600] hidden w-52 rounded border border-[#29313b] bg-[#151a21] p-2 text-[10px] leading-relaxed text-[#e7eaee] shadow-md group-hover:block">
+                  <p className="mb-1 font-mono uppercase tracking-wide text-[#8b94a0]">{t('crossing.window')}</p>
+                  <p className="text-[#5b8db8]">{t('crossing.windowInfo')}</p>
+                </div>
               </div>
-              <div className="pointer-events-none absolute right-0 top-7 z-[600] hidden w-48 rounded border border-[#29313b] bg-[#151a21] p-2 text-[10px] leading-relaxed text-[#e7eaee] shadow-md group-hover:block">
-                <p className="mb-1 font-mono uppercase tracking-wide text-[#8b94a0]">{t('crossing.info')}</p>
-                <p className={validated ? 'text-[#6aa86f]' : 'text-[#c0564a]'}>
-                  {validated && nearby ? t('crossing.validated', { magnitude: nearby.quake.magnitude.toFixed(1), dist: Math.round(nearby.distanceKm) }) : t('crossing.notValidated')}
-                </p>
+            ) : (
+              <div className="group relative">
+                <div className={`flex items-center gap-1 rounded-full border px-1.5 py-0.5 backdrop-blur-sm ${validated ? 'border-[#6aa86f]/50 bg-[#0e1116]/85' : 'border-[#c0564a]/50 bg-[#0e1116]/85'}`}>
+                  {validated ? <CheckCircle2 className="size-3.5 text-[#6aa86f]" /> : <XCircle className="size-3.5 text-[#c0564a]" />}
+                  <Info className="size-3 text-[#8b94a0]" />
+                </div>
+                <div className="pointer-events-none absolute right-0 top-7 z-[600] hidden w-48 rounded border border-[#29313b] bg-[#151a21] p-2 text-[10px] leading-relaxed text-[#e7eaee] shadow-md group-hover:block">
+                  <p className="mb-1 font-mono uppercase tracking-wide text-[#8b94a0]">{t('crossing.info')}</p>
+                  <p className={validated ? 'text-[#6aa86f]' : 'text-[#c0564a]'}>
+                    {validated && nearby ? t('crossing.validated', { magnitude: nearby.quake.magnitude.toFixed(1), dist: Math.round(nearby.distanceKm) }) : t('crossing.notValidated')}
+                  </p>
+                </div>
               </div>
-            </div>
+            )}
           </div>
         )}
       </div>

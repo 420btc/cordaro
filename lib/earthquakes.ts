@@ -22,6 +22,27 @@ export function nearestQuakeWithin(latitude: number, longitude: number, quakes: 
   return best
 }
 
+// Igual que nearestQuakeWithin, pero además exige que el sismo caiga dentro
+// de una ventana temporal (±windowMs) centrada en el instante del cruce.
+export function nearestQuakeWithinWindow(
+  latitude: number,
+  longitude: number,
+  quakes: Earthquake[],
+  radiusKm = 100,
+  centerTimestamp: number,
+  windowMs = 3600000,
+): { quake: Earthquake; distanceKm: number } | null {
+  let best: { quake: Earthquake; distanceKm: number } | null = null
+  for (const quake of quakes) {
+    if (Math.abs(quake.timestamp - centerTimestamp) > windowMs) continue
+    const distanceKm = haversineKm(latitude, longitude, quake.latitude, quake.longitude)
+    if (distanceKm <= radiusKm && (!best || distanceKm < best.distanceKm)) {
+      best = { quake, distanceKm }
+    }
+  }
+  return best
+}
+
 async function queryUsgs(start: Date, end: Date, minMagnitude = 4): Promise<Earthquake[]> {
   const url = `https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&starttime=${start.toISOString()}&endtime=${end.toISOString()}&minmagnitude=${minMagnitude}&orderby=time`
   try {
