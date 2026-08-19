@@ -1,17 +1,17 @@
 export const dynamic = 'force-dynamic'
 
-// Proxy de imágenes del Space Observing System (Tomsk State University).
-// El feed es HTTP y sin CORS; al servirlas desde aquí evitamos el mixed-content
-// y el bloqueo por CORS en el navegador.
-//   ?chart=shm -> espectrograma (Schumann H-field)
+// Proxy de imágenes del Space Observing System (Tomsk, región 70).
+// Servimos desde nuestro dominio para controlar la caché y evitar bloqueos
+// por referer/hotlink del proveedor original.
+//   ?chart=shm -> espectrograma (sonograma ELF)
 //   ?chart=sra -> amplitud
 //   ?chart=srf -> frecuencia
 //   ?chart=srq -> factor Q
 const CHARTS: Record<string, { url: string; type: string }> = {
-  shm: { url: 'http://sosrff.tsu.ru/new/shm.jpg', type: 'image/jpeg' },
-  sra: { url: 'http://sosrff.tsu.ru/new/sra.jpg', type: 'image/jpeg' },
-  srf: { url: 'http://sosrff.tsu.ru/new/srf.jpg', type: 'image/jpeg' },
-  srq: { url: 'http://sosrff.tsu.ru/new/srq.jpg', type: 'image/jpeg' },
+  shm: { url: 'https://sos70.ru/provider.php?file=shm.jpg', type: 'image/jpeg' },
+  sra: { url: 'https://sos70.ru/provider.php?file=sra.jpg', type: 'image/jpeg' },
+  srf: { url: 'https://sos70.ru/provider.php?file=srf.jpg', type: 'image/jpeg' },
+  srq: { url: 'https://sos70.ru/provider.php?file=srq.jpg', type: 'image/jpeg' },
 }
 
 export async function GET(request: Request) {
@@ -27,6 +27,7 @@ export async function GET(request: Request) {
       headers: {
         'Content-Type': target.type,
         'Cache-Control': 'public, max-age=300, s-maxage=300',
+        'X-Fetched-At': new Date().toISOString(),
       },
     })
   } catch (e) {
