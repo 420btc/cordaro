@@ -12,6 +12,7 @@ import { XProfile } from '@/components/XProfile'
 import { IntermagnetPanel } from '@/components/IntermagnetPanel'
 import { SolarWindPanel } from '@/components/SolarWindPanel'
 import { SchumannPanel } from '@/components/SchumannPanel'
+import { MonthlyCrossingsHeatmap } from '@/components/MonthlyCrossingsHeatmap'
 import { CrossingsValidationPanel } from '@/components/CrossingsValidationPanel'
 import { WatchModal } from '@/components/WatchModal'
 import { PastCrossingsPopup } from '@/components/PastCrossingsPopup'
@@ -249,6 +250,7 @@ function Dashboard() {
           </footer>
         </div>
 
+        <MonthlyCrossingsHeatmap />
         <IntermagnetPanel />
         <SolarWindPanel />
         <SchumannPanel />

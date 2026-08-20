@@ -1,6 +1,7 @@
 import { lineString, point, lineIntersect } from '@turf/turf'
 import type { PlateCrossing, MoonPosition, PlateSegment } from './types'
 import { PLATE_BOUNDARIES } from './plateBoundaries'
+import { calculateMoonPath } from './astronomy'
 
 export function detectPlateCrossings(path: MoonPosition[], segments: PlateSegment[] = PLATE_BOUNDARIES): PlateCrossing[] {
   const crossings: PlateCrossing[] = []
@@ -24,3 +25,21 @@ export function detectPlateCrossings(path: MoonPosition[], segments: PlateSegmen
 
 export function isNearCrossing(timestamp: number, crossings: PlateCrossing[]) { return crossings.some((crossing) => Math.abs(timestamp - crossing.timestamp) <= 3600000) }
 export function isOnPlateBoundary(latitude: number, longitude: number) { return point([longitude, latitude]) }
+
+function daysInMonth(year: number, monthIndex: number): number {
+  return new Date(Date.UTC(year, monthIndex + 1, 0)).getUTCDate()
+}
+
+// Calcula todos los cruces Luna/antípoda de un mes completo, cediendo al hilo
+// principal entre días para no bloquear la interfaz durante el cálculo.
+export async function detectMonthCrossings(year: number, monthIndex: number, stepMinutes = 30): Promise<PlateCrossing[]> {
+  const days = daysInMonth(year, monthIndex)
+  const crossings: PlateCrossing[] = []
+  for (let day = 1; day <= days; day++) {
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    const date = new Date(Date.UTC(year, monthIndex, day))
+    const dayCrossings = detectPlateCrossings(calculateMoonPath(date, stepMinutes))
+    for (const crossing of dayCrossings) crossings.push({ ...crossing, id: `${year}-${monthIndex}-${day}-${crossing.id}` })
+  }
+  return crossings
+}
