@@ -11,6 +11,22 @@ const stationIcon = (code: string) => L.divIcon({ className: 'station-marker', h
 const labelIcon = (label: string) => L.divIcon({ className: 'plate-label', html: `<span>${label}</span>`, iconSize: [120, 18], iconAnchor: [60, 9] })
 const pulseIcon = L.divIcon({ className: 'pulse-marker', html: '<span></span>', iconSize: [22, 22], iconAnchor: [11, 11] })
 
+// Parte una polilínea cuando cruza el antimeridiano (±180°) para evitar que
+// Leaflet dibuje una línea recta atravesando todo el mapa.
+function splitAntimeridian(points: [number, number][]): [number, number][][] {
+  const segments: [number, number][][] = []
+  let current: [number, number][] = []
+  for (let i = 0; i < points.length; i++) {
+    if (i > 0 && Math.abs(points[i][1] - points[i - 1][1]) > 180) {
+      if (current.length >= 2) segments.push(current)
+      current = []
+    }
+    current.push(points[i])
+  }
+  if (current.length >= 2) segments.push(current)
+  return segments
+}
+
 function AutoResize() {
   const map = useMap()
   useEffect(() => {
@@ -80,17 +96,25 @@ export function LeafletMapInner({ positions, sunPositions, crossings, showAntipo
         <p><i className="mr-1.5 inline-block size-2 rounded-full bg-[#e5484d]" /> {t('crossing.next')}</p>
       </div>
 
-      {PLATE_BOUNDARIES.map((segment, index) => (
-        <Polyline key={`${segment.name}-${index}`} positions={segment.coordinates.map(([lng, lat]) => [lat, lng] as [number, number])} pathOptions={{ color: '#c0564a', weight: 1, opacity: 0.4 }} />
-      ))}
+      {PLATE_BOUNDARIES.map((segment, index) =>
+        splitAntimeridian(segment.coordinates.map(([lng, lat]) => [lat, lng] as [number, number])).map((seg, j) => (
+          <Polyline key={`${segment.name}-${index}-${j}`} positions={seg} pathOptions={{ color: '#c0564a', weight: 1, opacity: 0.4 }} />
+        ))
+      )}
 
-      <Polyline positions={moonPath} pathOptions={{ color: '#e0a028', weight: 2, dashArray: '6 6' }} />
-      <Polyline positions={antiPath} pathOptions={{ color: '#5b8db8', weight: 1.5, dashArray: '4 6' }} />
-      {sunPath.length > 0 && <Polyline positions={sunPath} pathOptions={{ color: '#d08a3a', weight: 1.5, dashArray: '2 6', opacity: 0.7 }} />}
+      {splitAntimeridian(moonPath).map((seg, i) => (
+        <Polyline key={`moon-${i}`} positions={seg} pathOptions={{ color: '#e0a028', weight: 2, dashArray: '6 6' }} />
+      ))}
+      {splitAntimeridian(antiPath).map((seg, i) => (
+        <Polyline key={`anti-${i}`} positions={seg} pathOptions={{ color: '#5b8db8', weight: 1.5, dashArray: '4 6' }} />
+      ))}
+      {sunPath.length > 0 && splitAntimeridian(sunPath).map((seg, i) => (
+        <Polyline key={`sun-${i}`} positions={seg} pathOptions={{ color: '#d08a3a', weight: 1.5, dashArray: '2 6', opacity: 0.7 }} />
+      ))}
 
       {crossings.map((crossing) => (
         <CircleMarker key={crossing.id} center={[crossing.latitude, crossing.longitude]} radius={7} pathOptions={{ color: '#e7eaee', weight: 2, fillColor: crossing.type === 'moon' ? '#c0564a' : '#5b8db8', fillOpacity: 0.95 }}>
-          <Tooltip permanent direction="top" offset={[0, -4]}>{crossing.time}</Tooltip>
+          <Tooltip direction="top" offset={[0, -4]}>{crossing.time}</Tooltip>
           <Popup>{crossing.type === 'moon' ? t('map.moon') : t('map.antipode')} {t('map.popupCrosses')} {crossing.plateA}<br />{crossing.time} UTC · {crossing.angle.toFixed(0)}°</Popup>
         </CircleMarker>
       ))}

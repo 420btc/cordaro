@@ -18,6 +18,7 @@ import { RegionalSeismicityPanel } from '@/components/RegionalSeismicityPanel'
 import { CrossingsValidationPanel } from '@/components/CrossingsValidationPanel'
 import { WatchModal } from '@/components/WatchModal'
 import { PastCrossingsPopup } from '@/components/PastCrossingsPopup'
+import { ChatWidget } from '@/components/ChatWidget'
 import { dateKey, generateAnomalies, type DayData, type Earthquake, type MoonPosition, type PlateCrossing } from '@/lib/types'
 import { generateCelestialData } from '@/lib/dailyData'
 import { fetchEarthquakes, nearestQuakeWithinWindow } from '@/lib/earthquakes'
@@ -276,6 +277,7 @@ function Dashboard() {
 
       {watchCrossing && <WatchModal crossing={watchCrossing} onClose={() => setWatchCrossing(null)} />}
       <PastCrossingsPopup />
+      <ChatWidget />
 
       {showMobileNotice && (
         <div className="fixed inset-0 z-[1100] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
