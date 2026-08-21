@@ -36,8 +36,6 @@ export function RegionalSeismicityPanel() {
     )
   }
 
-  useEffect(() => { requestLocation() }, [])
-
   useEffect(() => {
     if (!region) { setQuakes(null); setLoading(false); setError(false); return }
     let active = true
