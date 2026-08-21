@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic'
 
 import { regionById, type RegionId, type RegionalQuake } from '@/lib/regionalSeismicity'
+import { getCached, setCached } from '@/lib/upstreamCache'
 
 // Proxy unificado de sismicidad regional:
 //   ?region=espana    -> IGN (Red Sísmica Nacional) · últimos 10 días (HTML parseado)
@@ -130,6 +131,11 @@ async function fetchBmkg(): Promise<RegionalQuake[]> {
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const region = (searchParams.get('region') ?? 'espana') as RegionId
+  const key = `seismicity:${region}`
+  const cached = getCached<string>(key, 300000)
+  if (cached) {
+    return new Response(cached, { status: 200, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=300, s-maxage=300' } })
+  }
   try {
     let quakes: RegionalQuake[]
     let source: string
@@ -143,7 +149,9 @@ export async function GET(request: Request) {
       quakes = await fetchIgn()
       source = 'IGN'
     }
-    return new Response(JSON.stringify({ source, region, quakes }), {
+    const body = JSON.stringify({ source, region, quakes })
+    setCached(key, body)
+    return new Response(body, {
       status: 200,
       headers: { 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=300, s-maxage=300' },
     })

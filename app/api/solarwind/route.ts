@@ -1,5 +1,7 @@
 export const dynamic = 'force-dynamic'
 
+import { getCached, setCached } from '@/lib/upstreamCache'
+
 // Proxy de viento solar para evitar CORS y recortar el payload.
 //   ?source=rtsw                 -> tiempo real NOAA SWPC (SOLAR-1/ACE/DSCOVR), últimas 48 h
 //   ?source=soho&start=&end=     -> histórico SOHO/CELIAS Proton Monitor (5 min) vía CDAWeb HAPI
@@ -66,20 +68,33 @@ async function fetchSoho(start: string, end: string) {
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const source = searchParams.get('source') ?? 'rtsw'
+  const json = (data: unknown, maxAge: number) => new Response(JSON.stringify(data), { status: 200, headers: { 'Content-Type': 'application/json', 'Cache-Control': `public, max-age=${maxAge}, s-maxage=${maxAge}` } })
   try {
     if (source === 'kp') {
+      const key = 'solarwind:kp'
+      const cached = getCached<string>(key, 1800000)
+      if (cached) return json(JSON.parse(cached), 1800)
       const data = await fetchKp()
-      return new Response(JSON.stringify(data), { status: 200, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=1800' } })
+      setCached(key, JSON.stringify(data))
+      return json(data, 1800)
     }
     if (source === 'soho') {
       const start = searchParams.get('start')
       const end = searchParams.get('end')
       if (!start || !end) return new Response('Missing start or end', { status: 400 })
+      const key = `solarwind:soho:${start}:${end}`
+      const cached = getCached<string>(key, 300000)
+      if (cached) return json(JSON.parse(cached), 300)
       const data = await fetchSoho(start, end)
-      return new Response(JSON.stringify(data), { status: 200, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=300' } })
+      setCached(key, JSON.stringify(data))
+      return json(data, 300)
     }
+    const key = 'solarwind:rtsw'
+    const cached = getCached<string>(key, 60000)
+    if (cached) return json(JSON.parse(cached), 60)
     const data = await fetchRtsw()
-    return new Response(JSON.stringify(data), { status: 200, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=60' } })
+    setCached(key, JSON.stringify(data))
+    return json(data, 60)
   } catch (e) {
     return new Response(JSON.stringify({ error: e instanceof Error ? e.message : 'Upstream error' }), { status: 502, headers: { 'Content-Type': 'application/json' } })
   }

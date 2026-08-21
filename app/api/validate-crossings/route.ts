@@ -2,6 +2,7 @@ import { calculateMoonPath } from '@/lib/astronomy'
 import { detectPlateCrossings } from '@/lib/plates'
 import { fetchEarthquakesRange } from '@/lib/earthquakes'
 import { permutationTest, type CrossingLike } from '@/lib/statistics'
+import { getCached, setCached } from '@/lib/upstreamCache'
 
 export const dynamic = 'force-dynamic'
 
@@ -18,6 +19,12 @@ export async function GET(request: Request) {
   const daysBack = clamp(parseInt(searchParams.get('days') ?? '30', 10), 7, 180)
   const windowHours = clamp(parseInt(searchParams.get('window') ?? '24', 10), 1, 72)
   const iterations = clamp(parseInt(searchParams.get('iterations') ?? '200', 10), 50, 2000)
+
+  const cacheKey = `validate:${daysBack}:${windowHours}:${iterations}`
+  const cached = getCached<string>(cacheKey, 600000)
+  if (cached) {
+    return new Response(cached, { status: 200, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=600, s-maxage=600' } })
+  }
 
   const now = new Date()
   const end = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 23, 59, 59, 999))
@@ -66,7 +73,8 @@ export async function GET(request: Request) {
       totalCrossings: crossings.length,
       results,
     })
-    return new Response(body, { status: 200, headers: { 'Content-Type': 'application/json' } })
+    setCached(cacheKey, body)
+    return new Response(body, { status: 200, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=600, s-maxage=600' } })
   } catch (e) {
     return new Response(JSON.stringify({ error: e instanceof Error ? e.message : 'Backtest error' }), { status: 502, headers: { 'Content-Type': 'application/json' } })
   }
