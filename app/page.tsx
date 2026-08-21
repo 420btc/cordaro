@@ -16,6 +16,7 @@ import { SchumannPanel } from '@/components/SchumannPanel'
 import { MonthlyCrossingsHeatmap } from '@/components/MonthlyCrossingsHeatmap'
 import { RegionalSeismicityPanel } from '@/components/RegionalSeismicityPanel'
 import { CrossingsValidationPanel } from '@/components/CrossingsValidationPanel'
+import { SsgiPanel } from '@/components/SsgiPanel'
 import { WatchModal } from '@/components/WatchModal'
 import { PastCrossingsPopup } from '@/components/PastCrossingsPopup'
 import { ChatWidget } from '@/components/ChatWidget'
@@ -254,6 +255,7 @@ function Dashboard() {
           </footer>
         </div>
 
+        <SsgiPanel date={date} />
         <MonthlyCrossingsHeatmap />
         <RegionalSeismicityPanel />
         <IntermagnetPanel />
