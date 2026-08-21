@@ -4,6 +4,7 @@ export type PlateCrossing = { id: string; time: string; timestamp: number; plate
 export type MagneticAnomaly = { time: string; timestamp: number; energy: number; globalRate: number }
 export type Earthquake = { id: string; time: string; timestamp: number; latitude: number; longitude: number; depth: number; magnitude: number; place: string }
 export type Station = { code: string; name: string; latitude: number; longitude: number }
+export type AuthUser = { id: number; name: string; createdAt: string }
 export type MapPoint = { latitude: number; longitude: number; time: string; type: 'moon' | 'antipode' }
 export type PlateSegment = { name: string; coordinates: [number, number][] }
 export type DayData = { positions: MoonPosition[]; sunPositions: SunPosition[]; crossings: PlateCrossing[]; anomalies: MagneticAnomaly[]; earthquakes: Earthquake[] }

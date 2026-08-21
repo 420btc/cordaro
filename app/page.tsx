@@ -26,6 +26,7 @@ import { computeCoincidences } from '@/lib/coincidences'
 import { calculatePlanetAspects, ALIGNMENT_SYMBOL, type PlanetAspect, type PlanetAlignmentType } from '@/lib/planets'
 import { moonIllumination, moonPhaseKey } from '@/lib/astronomy'
 import { I18nProvider, useI18n, type TFunction } from '@/lib/i18n'
+import { AuthProvider, useAuth } from '@/lib/auth-context'
 import { format } from 'date-fns'
 
 const MiniMap = dynamic(() => import('@/components/MiniMap').then((m) => m.MiniMap), { ssr: false, loading: () => <div className="h-full w-full bg-[#0e1116]" /> })
@@ -128,7 +129,7 @@ function crossingHeat(remainingMs: number): { r: number; g: number; b: number } 
 }
 
 export default function Page() {
-  return <I18nProvider><Dashboard /></I18nProvider>
+  return <I18nProvider><AuthProvider><Dashboard /></AuthProvider></I18nProvider>
 }
 
 function Dashboard() {
@@ -450,6 +451,7 @@ function CrossingsTimeline({ crossings, date, earthquakes, flashedCrossingId, on
 
 function CrossingCard({ crossing, now, isNext, showCountdown, earthquakes, flashed, onWatch }: { crossing: PlateCrossing; now: number; isNext: boolean; showCountdown: boolean; earthquakes: Earthquake[]; flashed: boolean; onWatch: (crossing: PlateCrossing) => void }) {
   const { t } = useI18n()
+  const { user, isFavorite, toggleFavorite } = useAuth()
   const isMoon = crossing.type === 'moon'
   const color = isMoon ? '#c0564a' : '#5b8db8'
   const { label } = formatCountdown(crossing.timestamp, now, t)
@@ -460,6 +462,8 @@ function CrossingCard({ crossing, now, isNext, showCountdown, earthquakes, flash
   const isPast = crossing.timestamp <= now
   const validatedPast = isPast && validated
   const inWindow = Math.abs(crossing.timestamp - now) <= 3600000
+  const favId = `${crossing.timestamp}-${crossing.id}`
+  const fav = isFavorite(favId)
   const highlightClass = flashed ? 'border-white ring-4 ring-white shadow-[0_0_40px_rgba(255,255,255,0.8)]' : isNext ? 'border-[#e0a028] ring-2 ring-[#e0a028]/40 shadow-[0_0_22px_rgba(224,160,40,0.28)]' : inWindow ? 'border-[#5b8db8] ring-2 ring-[#5b8db8]/40 shadow-[0_0_22px_rgba(91,141,184,0.28)]' : validatedPast ? 'border-[#a3e635] ring-2 ring-[#a3e635]/60 shadow-[0_0_30px_rgba(163,230,53,0.55)]' : 'border-[#29313b]'
   const isNow = !isPast && remaining < 30000
   const badgeStyle = {
@@ -532,7 +536,18 @@ function CrossingCard({ crossing, now, isNext, showCountdown, earthquakes, flash
         <p className="mt-1 font-serif text-sm font-semibold text-[#e7eaee]">{isMoon ? t('crossing.moonCrosses') : t('crossing.antipodeCrosses')}</p>
         <p className="text-xs text-[#8b94a0]">{crossing.plateA}</p>
         <p className="mt-2 font-mono text-[10px] text-[#8b94a0]">{formatCoord(crossing.latitude, crossing.longitude, t)}</p>
-        <div className="mt-2 flex items-center justify-end">
+        <div className="mt-2 flex items-center justify-between">
+          {user && (
+            <button
+              type="button"
+              onClick={() => toggleFavorite({ crossingId: favId, time: crossing.time, plate: crossing.plateA, type: crossing.type, latitude: crossing.latitude, longitude: crossing.longitude })}
+              aria-pressed={fav}
+              aria-label={fav ? t('auth.remove') : t('auth.favorite')}
+              className={`flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-bold shadow-sm ${fav ? 'border-[#c0564a]/70 bg-[#c0564a]/10 text-[#c0564a]' : 'border-[#29313b] bg-[#1c232b] text-[#8b94a0] hover:text-[#c0564a]'}`}
+            >
+              <Heart className={`size-3.5 ${fav ? 'fill-[#c0564a]' : ''}`} />
+            </button>
+          )}
           <button
             type="button"
             onClick={() => setFollowing((value) => !value)}

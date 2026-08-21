@@ -4,6 +4,7 @@ import { CalendarDays, Download, Info, Pause, Play, RefreshCw } from 'lucide-rea
 import { format } from 'date-fns'
 import { useI18n, type Lang } from '@/lib/i18n'
 import { DateCalendar } from '@/components/DateCalendar'
+import { AccountMenu } from '@/components/AccountMenu'
 
 type Props = {
   date: Date
@@ -84,6 +85,7 @@ export function DateControls(props: Props) {
 
       <div className="ml-auto flex items-center gap-2">
         <LanguageToggle />
+        <AccountMenu />
         <button type="button" onClick={props.onInfo} className="flex h-9 items-center gap-1.5 rounded border border-[#29313b] bg-[#1c232b] px-3 text-xs font-semibold text-[#e7eaee] hover:bg-[#29313b]"><Info className="size-4" /> {t('howItWorks')}</button>
         <button type="button" onClick={props.onExport} className="flex h-9 items-center gap-1.5 rounded bg-[#e0a028] px-4 text-xs font-semibold text-[#0e1116] hover:bg-[#c88a1f]"><Download className="size-4" /> {t('exportImage')}</button>
         <span className="font-mono text-[10px] text-[#8b94a0]">{props.live ? <RefreshCw className="inline size-4 animate-spin" /> : props.animate ? <Play className="inline size-4 text-[#6aa86f]" /> : <Pause className="inline size-4" />}</span>

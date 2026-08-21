@@ -3,11 +3,13 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Loader2, LocateFixed, MessageCircle, Minus, Send, X } from 'lucide-react'
 import { format } from 'date-fns'
 import { useI18n } from '@/lib/i18n'
+import { useAuth } from '@/lib/auth-context'
 
 type Msg = { id: number; name: string; body: string; createdAt: string }
 
 export function ChatWidget() {
   const { t } = useI18n()
+  const { user, register } = useAuth()
   const [open, setOpen] = useState(false)
   const [minimized, setMinimized] = useState(false)
   const [tab, setTab] = useState<'global' | 'region'>('global')
@@ -18,11 +20,17 @@ export function ChatWidget() {
   const [input, setInput] = useState('')
   const [sending, setSending] = useState(false)
   const [error, setError] = useState(false)
+  const [promptAccount, setPromptAccount] = useState(false)
+  const [pw, setPw] = useState('')
+  const [pw2, setPw2] = useState('')
+  const [pwError, setPwError] = useState<string | null>(null)
+  const [pwBusy, setPwBusy] = useState(false)
 
   const offsetRef = useRef({ x: 0, y: 0 })
   const [offset, setOffset] = useState({ x: 0, y: 0 })
   const listRef = useRef<HTMLDivElement>(null)
 
+  const displayName = user ? user.name : name
   const room = tab === 'global' ? 'global' : regionCell ? `h3:${regionCell}` : ''
 
   const saveName = (v: string) => { setName(v); localStorage.setItem('cordaroChatName', v) }
@@ -73,15 +81,28 @@ export function ChatWidget() {
 
   const send = async () => {
     const body = input.trim()
-    if (!body || !name.trim() || sending) return
+    if (!body || !displayName.trim() || sending) return
     setSending(true)
     try {
-      await fetch('/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ room, name: name.trim(), body }) })
+      await fetch('/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ room, name: displayName.trim(), body }) })
       setInput('')
       await load()
+      if (!user && !localStorage.getItem('cordaroChatPrompted')) setPromptAccount(true)
     } catch {}
     setSending(false)
   }
+
+  const createAccount = async () => {
+    if (pw !== pw2) { setPwError(t('auth.passwordMismatch')); return }
+    setPwBusy(true)
+    const err = await register(name.trim(), pw)
+    setPwBusy(false)
+    if (err) { setPwError(err); return }
+    localStorage.setItem('cordaroChatPrompted', '1')
+    setPromptAccount(false)
+  }
+
+  const dismissAccount = () => { localStorage.setItem('cordaroChatPrompted', '1'); setPromptAccount(false) }
 
   const startDrag = (e: React.PointerEvent) => {
     const startX = e.clientX
@@ -112,6 +133,25 @@ export function ChatWidget() {
         </button>
       )}
 
+      {promptAccount && (
+        <div className="fixed inset-0 z-[1250] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm" onClick={dismissAccount}>
+          <div className="w-full max-w-xs rounded-md border border-[#29313b] bg-[#151a21] p-5 shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <h3 className="font-serif text-sm font-bold text-[#e7eaee]">{t('auth.createAccountTitle')}</h3>
+            <p className="mt-1 text-xs text-[#8b94a0]">{t('auth.createAccountDesc')}</p>
+            <div className="mt-3 space-y-2">
+              <input value={name} onChange={(e) => saveName(e.target.value)} maxLength={24} placeholder={t('auth.name')} className="w-full rounded border border-[#29313b] bg-[#0e1116] px-2 py-1.5 text-xs text-[#e7eaee] placeholder-[#8b94a0]" />
+              <input type="password" value={pw} onChange={(e) => setPw(e.target.value)} placeholder={t('auth.password')} className="w-full rounded border border-[#29313b] bg-[#0e1116] px-2 py-1.5 text-xs text-[#e7eaee] placeholder-[#8b94a0]" />
+              <input type="password" value={pw2} onChange={(e) => setPw2(e.target.value)} placeholder={t('auth.confirm')} className="w-full rounded border border-[#29313b] bg-[#0e1116] px-2 py-1.5 text-xs text-[#e7eaee] placeholder-[#8b94a0]" />
+            </div>
+            {pwError && <p className="mt-2 text-xs text-[#c0564a]">{pwError}</p>}
+            <button type="button" onClick={createAccount} disabled={pwBusy || !name.trim() || !pw} className="mt-3 w-full rounded-md bg-[#e0a028] px-4 py-2 text-sm font-bold text-[#0e1116] hover:bg-[#c88a1f] disabled:opacity-50">
+              {pwBusy ? t('auth.loading') : t('auth.register')}
+            </button>
+            <button type="button" onClick={dismissAccount} className="mt-2 w-full rounded px-4 py-1.5 text-xs text-[#8b94a0] hover:text-[#e7eaee]">{t('auth.later')}</button>
+          </div>
+        </div>
+      )}
+
       {open && (
         <div
           className="fixed bottom-16 right-4 z-[950] w-80 max-w-[90vw] rounded-md border border-[#29313b] bg-[#151a21] shadow-2xl"
@@ -131,13 +171,17 @@ export function ChatWidget() {
           {!minimized && (
             <>
               <div className="flex items-center gap-2 border-b border-[#29313b] px-3 py-2">
-                <input
-                  value={name}
-                  onChange={(e) => saveName(e.target.value)}
-                  maxLength={24}
-                  placeholder={t('chat.name')}
-                  className="min-w-0 flex-1 rounded border border-[#29313b] bg-[#0e1116] px-2 py-1 text-xs text-[#e7eaee] placeholder-[#8b94a0]"
-                />
+                {user ? (
+                  <span className="min-w-0 flex-1 truncate font-mono text-xs text-[#5b8db8]">{t('chat.as')}: {displayName}</span>
+                ) : (
+                  <input
+                    value={name}
+                    onChange={(e) => saveName(e.target.value)}
+                    maxLength={24}
+                    placeholder={t('chat.name')}
+                    className="min-w-0 flex-1 rounded border border-[#29313b] bg-[#0e1116] px-2 py-1 text-xs text-[#e7eaee] placeholder-[#8b94a0]"
+                  />
+                )}
                 <div className="flex items-center gap-1 rounded border border-[#29313b] bg-[#1c232b] p-0.5">
                   <button type="button" onClick={() => setTab('global')} className={`rounded px-2 py-1 font-mono text-[10px] font-bold uppercase tracking-wide ${tab === 'global' ? 'bg-[#5b8db8] text-[#0e1116]' : 'text-[#8b94a0] hover:text-[#e7eaee]'}`}>{t('chat.global')}</button>
                   <button type="button" onClick={() => setTab('region')} className={`rounded px-2 py-1 font-mono text-[10px] font-bold uppercase tracking-wide ${tab === 'region' ? 'bg-[#5b8db8] text-[#0e1116]' : 'text-[#8b94a0] hover:text-[#e7eaee]'}`}>{t('chat.region')}</button>
@@ -174,10 +218,10 @@ export function ChatWidget() {
                   onKeyDown={(e) => { if (e.key === 'Enter') send() }}
                   maxLength={500}
                   placeholder={t('chat.placeholder')}
-                  disabled={tab === 'region' && !regionCell}
+                  disabled={(tab === 'region' && !regionCell) || !displayName.trim()}
                   className="min-w-0 flex-1 rounded border border-[#29313b] bg-[#0e1116] px-2 py-1.5 text-xs text-[#e7eaee] placeholder-[#8b94a0] disabled:opacity-50"
                 />
-                <button type="button" onClick={send} disabled={sending || !input.trim() || !name.trim()} aria-label={t('chat.send')} className="flex size-8 items-center justify-center rounded bg-[#5b8db8] text-[#0e1116] hover:bg-[#6ba0d0] disabled:opacity-50">
+                <button type="button" onClick={send} disabled={sending || !input.trim() || !displayName.trim()} aria-label={t('chat.send')} className="flex size-8 items-center justify-center rounded bg-[#5b8db8] text-[#0e1116] hover:bg-[#6ba0d0] disabled:opacity-50">
                   {sending ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
                 </button>
               </div>
