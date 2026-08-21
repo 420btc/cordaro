@@ -1,11 +1,24 @@
 'use client'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Loader2, LocateFixed, MessageCircle, Minus, Send, X } from 'lucide-react'
+import { Binoculars, Loader2, LocateFixed, MessageCircle, Minus, Send, X } from 'lucide-react'
 import { format } from 'date-fns'
 import { useI18n } from '@/lib/i18n'
 import { useAuth } from '@/lib/auth-context'
+import { MiniMap } from '@/components/MiniMap'
 
-type Msg = { id: number; name: string; body: string; createdAt: string }
+type Msg = { id: number; name: string; body: string; kind: string; createdAt: string }
+
+type CrossingPayload = { crossingId: string; time: string; plate: string; type: string; latitude: number; longitude: number }
+
+function parseCrossing(body: string): CrossingPayload | null {
+  try {
+    const data = JSON.parse(body) as CrossingPayload
+    if (typeof data.latitude !== 'number' || typeof data.longitude !== 'number') return null
+    return data
+  } catch {
+    return null
+  }
+}
 
 export function ChatWidget() {
   const { t } = useI18n()
@@ -203,12 +216,28 @@ export function ChatWidget() {
               <div ref={listRef} className="no-scrollbar h-64 space-y-2 overflow-y-auto px-3 py-2">
                 {error && <p className="py-2 text-center text-xs text-[#c0564a]">{t('chat.error')}</p>}
                 {!error && messages.length === 0 && <p className="py-4 text-center text-xs text-[#8b94a0]">{t('chat.empty')}</p>}
-                {messages.map((m) => (
-                  <div key={m.id} className="rounded-md border border-[#29313b] bg-[#0e1116] px-2.5 py-1.5">
-                    <p className="font-mono text-[10px] text-[#8b94a0]"><span className="font-bold text-[#5b8db8]">{m.name}</span> · {format(new Date(m.createdAt), 'HH:mm')}</p>
-                    <p className="mt-0.5 whitespace-pre-wrap break-words text-xs leading-relaxed text-[#e7eaee]">{m.body}</p>
-                  </div>
-                ))}
+                {messages.map((m) => {
+                  const crossing = m.kind === 'crossing' ? parseCrossing(m.body) : null
+                  return (
+                    <div key={m.id} className="rounded-md border border-[#29313b] bg-[#0e1116] px-2.5 py-1.5">
+                      <p className="font-mono text-[10px] text-[#8b94a0]"><span className="font-bold text-[#5b8db8]">{m.name}</span> · {format(new Date(m.createdAt), 'HH:mm')}</p>
+                      {crossing ? (
+                        <div className="mt-1">
+                          <div className="relative h-24 w-full overflow-hidden rounded border border-[#29313b]">
+                            <MiniMap latitude={crossing.latitude} longitude={crossing.longitude} color={crossing.type === 'moon' ? '#c0564a' : '#5b8db8'} />
+                          </div>
+                          <p className="mt-1.5 flex items-center gap-1.5 text-xs font-semibold text-[#e7eaee]">
+                            <Binoculars className="size-3.5 text-[#e0a028]" />
+                            {crossing.type === 'moon' ? t('map.moon') : t('map.antipode')} · {crossing.plate}
+                          </p>
+                          <p className="font-mono text-[10px] text-[#8b94a0]">{crossing.time} UTC</p>
+                        </div>
+                      ) : (
+                        <p className="mt-0.5 whitespace-pre-wrap break-words text-xs leading-relaxed text-[#e7eaee]">{m.body}</p>
+                      )}
+                    </div>
+                  )
+                })}
               </div>
 
               <div className="flex items-center gap-2 border-t border-[#29313b] px-3 py-2">

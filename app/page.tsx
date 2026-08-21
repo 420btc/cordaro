@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import dynamic from 'next/dynamic'
 import { toPng } from 'html-to-image'
-import { AlertTriangle, Binoculars, CalendarDays, CheckCircle2, Clock, Compass, Eye, Globe2, Heart, Info, Layers, Monitor, Moon, Orbit, Ruler, Sun, X, XCircle, Zap } from 'lucide-react'
+import { AlertTriangle, Binoculars, CalendarDays, CheckCircle2, Clock, Compass, Eye, Globe2, Heart, Info, Layers, Loader2, Monitor, Moon, Orbit, Ruler, Share2, Sun, X, XCircle, Zap } from 'lucide-react'
 import { CordaroChart } from '@/components/CordaroChart'
 import { CordaroMap } from '@/components/CordaroMap'
 import { DateControls } from '@/components/DateControls'
@@ -28,6 +28,7 @@ import { calculatePlanetAspects, ALIGNMENT_SYMBOL, type PlanetAspect, type Plane
 import { moonIllumination, moonPhaseKey } from '@/lib/astronomy'
 import { I18nProvider, useI18n, type TFunction } from '@/lib/i18n'
 import { AuthProvider, useAuth } from '@/lib/auth-context'
+import { WatchersProvider, useWatchers } from '@/lib/watchers-context'
 import { format } from 'date-fns'
 
 const MiniMap = dynamic(() => import('@/components/MiniMap').then((m) => m.MiniMap), { ssr: false, loading: () => <div className="h-full w-full bg-[#0e1116]" /> })
@@ -130,7 +131,7 @@ function crossingHeat(remainingMs: number): { r: number; g: number; b: number } 
 }
 
 export default function Page() {
-  return <I18nProvider><AuthProvider><Dashboard /></AuthProvider></I18nProvider>
+  return <I18nProvider><AuthProvider><WatchersProvider><Dashboard /></WatchersProvider></AuthProvider></I18nProvider>
 }
 
 function Dashboard() {
@@ -454,6 +455,7 @@ function CrossingsTimeline({ crossings, date, earthquakes, flashedCrossingId, on
 function CrossingCard({ crossing, now, isNext, showCountdown, earthquakes, flashed, onWatch }: { crossing: PlateCrossing; now: number; isNext: boolean; showCountdown: boolean; earthquakes: Earthquake[]; flashed: boolean; onWatch: (crossing: PlateCrossing) => void }) {
   const { t } = useI18n()
   const { user, isFavorite, toggleFavorite } = useAuth()
+  const { namesFor, isWatching, toggleWatch } = useWatchers()
   const isMoon = crossing.type === 'moon'
   const color = isMoon ? '#c0564a' : '#5b8db8'
   const { label } = formatCountdown(crossing.timestamp, now, t)
@@ -473,8 +475,20 @@ function CrossingCard({ crossing, now, isNext, showCountdown, earthquakes, flash
     border: `1px solid rgba(${heat.r}, ${heat.g}, ${heat.b}, 0.55)`,
     color: `rgb(${heat.r}, ${heat.g}, ${heat.b})`,
   }
-  const [following, setFollowing] = useState(false)
-  const observers = following ? 1 : 0
+  const watching = isWatching(favId)
+  const observerNames = namesFor(favId)
+  const observers = observerNames.length
+  const [sharing, setSharing] = useState(false)
+  const shareToChat = async () => {
+    if (sharing) return
+    const name = user ? user.name : (typeof window !== 'undefined' ? (localStorage.getItem('cordaroChatName') ?? '').trim() : '')
+    const sender = name || t('chat.guest')
+    setSharing(true)
+    try {
+      await fetch('/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ room: 'global', name: sender, kind: 'crossing', body: JSON.stringify({ crossingId: favId, time: crossing.time, plate: crossing.plateA, type: crossing.type, latitude: crossing.latitude, longitude: crossing.longitude }) }) })
+    } catch {}
+    setSharing(false)
+  }
   return (
     <div id={crossing.id} className={`flex-[1_1_280px] min-w-[260px] overflow-hidden rounded-md border bg-[#151a21] shadow-sm ${highlightClass}`}>
       <div className={`relative h-32 w-full overflow-hidden border-b ${isNext ? 'border-[#e0a028]/60' : inWindow ? 'border-[#5b8db8]/70' : validatedPast ? 'border-[#a3e635]/70' : 'border-[#29313b]'}`}>
@@ -552,14 +566,24 @@ function CrossingCard({ crossing, now, isNext, showCountdown, earthquakes, flash
           )}
           <button
             type="button"
-            onClick={() => setFollowing((value) => !value)}
-            aria-pressed={following}
-            aria-label={following ? t('observers.leave') : t('observers.join')}
-            title={`${observers} ${t('observers.label')}`}
-            className={`flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-bold shadow-sm ${following ? 'border-[#e0a028]/70 bg-[#e0a028]/10 text-[#e0a028]' : 'border-[#29313b] bg-[#1c232b] text-[#8b94a0] hover:text-[#e7eaee]'}`}
+            onClick={() => toggleWatch({ crossingId: favId, time: crossing.time, plate: crossing.plateA, type: crossing.type, latitude: crossing.latitude, longitude: crossing.longitude })}
+            aria-pressed={watching}
+            aria-label={watching ? t('observers.leave') : t('observers.join')}
+            title={observerNames.length ? observerNames.join(', ') : t('observers.none')}
+            className={`group relative flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-bold shadow-sm ${watching ? 'border-[#e0a028]/70 bg-[#e0a028]/10 text-[#e0a028]' : 'border-[#29313b] bg-[#1c232b] text-[#8b94a0] hover:text-[#e7eaee]'}`}
           >
-            <Binoculars className="size-3.5" />
+            <Binoculars className={`size-3.5 ${watching ? 'fill-[#e0a028]/30' : ''}`} />
             <span className="font-mono tabular-nums">{observers}</span>
+          </button>
+          <button
+            type="button"
+            onClick={shareToChat}
+            disabled={sharing}
+            aria-label={t('observers.share')}
+            title={t('observers.share')}
+            className="flex items-center gap-1 rounded-full border border-[#29313b] bg-[#1c232b] px-2 py-0.5 text-[11px] font-bold text-[#8b94a0] shadow-sm hover:text-[#5b8db8] disabled:opacity-60"
+          >
+            {sharing ? <Loader2 className="size-3.5 animate-spin" /> : <Share2 className="size-3.5" />}
           </button>
         </div>
       </div>

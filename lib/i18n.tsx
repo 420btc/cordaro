@@ -22,6 +22,8 @@ const es = {
   'observers.join': 'Unirse como observador',
   'observers.leave': 'Dejar de observar',
   'observers.label': 'observadores',
+  'observers.none': 'Nadie observa este cruce',
+  'observers.share': 'Compartir cruce en el chat',
 
   'worldclocks.title': 'Relojes mundiales',
   'worldclocks.location': 'Tu ubicación',
@@ -179,7 +181,7 @@ const es = {
   'chat.close': 'Cerrar',
   'chat.send': 'Enviar',
   'chat.as': 'Chat como',
-
+  'chat.guest': 'Invitado',
   'auth.account': 'Cuenta',
   'auth.title': 'Inicia sesión',
   'auth.profile': 'Perfil',
@@ -381,6 +383,8 @@ const en: Record<keyof typeof es, string> = {
   'observers.join': 'Join as observer',
   'observers.leave': 'Stop observing',
   'observers.label': 'observers',
+  'observers.none': 'Nobody is watching this crossing',
+  'observers.share': 'Share crossing in chat',
 
   'worldclocks.title': 'World clocks',
   'worldclocks.location': 'Your location',
@@ -538,7 +542,7 @@ const en: Record<keyof typeof es, string> = {
   'chat.close': 'Close',
   'chat.send': 'Send',
   'chat.as': 'Chatting as',
-
+  'chat.guest': 'Guest',
   'auth.account': 'Account',
   'auth.title': 'Sign in',
   'auth.profile': 'Profile',

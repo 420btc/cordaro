@@ -48,6 +48,18 @@ export function ensureSchema(): Promise<void> {
       created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
       PRIMARY KEY (user_id, crossing_id)
     )`
+    await sql`CREATE TABLE IF NOT EXISTS crossing_watchers (
+      user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      crossing_id TEXT NOT NULL,
+      time TEXT NOT NULL,
+      plate TEXT NOT NULL,
+      type TEXT NOT NULL,
+      latitude DOUBLE PRECISION NOT NULL,
+      longitude DOUBLE PRECISION NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      PRIMARY KEY (user_id, crossing_id)
+    )`
+    await sql`ALTER TABLE chat_messages ADD COLUMN IF NOT EXISTS kind TEXT NOT NULL DEFAULT 'text'`
   })()
   return schemaPromise
 }
