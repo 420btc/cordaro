@@ -11,6 +11,7 @@ import { WorldClocks } from '@/components/WorldClocks'
 import { XProfile } from '@/components/XProfile'
 import { IntermagnetPanel } from '@/components/IntermagnetPanel'
 import { SolarWindPanel } from '@/components/SolarWindPanel'
+import { SolarFlarePanel } from '@/components/SolarFlarePanel'
 import { SchumannPanel } from '@/components/SchumannPanel'
 import { MonthlyCrossingsHeatmap } from '@/components/MonthlyCrossingsHeatmap'
 import { RegionalSeismicityPanel } from '@/components/RegionalSeismicityPanel'
@@ -255,6 +256,7 @@ function Dashboard() {
         <RegionalSeismicityPanel />
         <IntermagnetPanel />
         <SolarWindPanel />
+        <SolarFlarePanel />
         <SchumannPanel />
         <CrossingsValidationPanel />
 
@@ -296,6 +298,10 @@ function SummaryStrip({ data, summary }: { data: DayData; summary: { mid: MoonPo
   const { t, lang } = useI18n()
   const illumination = moonIllumination(summary.mid.phase)
   const phaseName = { new: t('phase.new'), waxing: t('phase.waxing'), full: t('phase.full'), waning: t('phase.waning') }[moonPhaseKey(summary.mid.phase)]
+  const lats = data.positions.map((p) => p.latitude)
+  const minLat = Math.min(...lats)
+  const maxLat = Math.max(...lats)
+  const latLabel = (v: number) => (v < 0 ? `${Math.abs(v).toFixed(0)}°S` : `${v.toFixed(0)}°N`)
   const items = [
     { label: t('kpi.phase'), value: `${Math.round(illumination * 100)}%`, sub: phaseName, Icon: Moon, tint: 'text-[#e0a028]' },
     { label: t('kpi.angle'), value: `${summary.mid.sunAngle.toFixed(0)}°`, sub: t('kpi.angleSub'), Icon: Sun, tint: 'text-[#d08a3a]' },
@@ -303,9 +309,10 @@ function SummaryStrip({ data, summary }: { data: DayData; summary: { mid: MoonPo
     { label: t('kpi.crossings'), value: `${data.crossings.length}`, sub: t('kpi.crossingsSub'), Icon: Layers, tint: 'text-[#8b94a0]' },
     { label: t('kpi.peak'), value: summary.peak.value.toFixed(1), sub: `${t('kpi.peakOf')} · ${summary.peak.time} UTC`, Icon: Zap, tint: 'text-[#e0a028]' },
     { label: t('kpi.quakes'), value: `${data.earthquakes.length}`, sub: `${t('kpi.quakesSub')} ${summary.maxMag.toFixed(1)}`, Icon: Globe2, tint: 'text-[#6aa86f]' },
+    { label: t('kpi.latitude'), value: `${latLabel(minLat)}–${latLabel(maxLat)}`, sub: t('kpi.latitudeSub'), Icon: Compass, tint: 'text-[#5b8db8]' },
   ]
   return (
-    <section aria-label="Resumen del día" className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
+    <section aria-label="Resumen del día" className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-7">
       {items.map(({ label, value, sub, Icon, tint }) => (
         <div key={label} className="rounded-md border border-[#29313b] bg-[#151a21] p-4 shadow-sm">
           <div className="flex items-center justify-between">
@@ -400,6 +407,7 @@ function CrossingsTimeline({ crossings, date, earthquakes, flashedCrossingId, on
 
   const sorted = useMemo(() => [...crossings].sort((a, b) => a.timestamp - b.timestamp), [crossings])
   const nextId = showCountdown ? sorted.find((crossing) => crossing.timestamp > now)?.id : undefined
+  const upcoming = showCountdown ? sorted.filter((crossing) => crossing.timestamp > now).slice(0, 6) : []
 
   return (
     <section aria-label={t('crossings.title')} className="rounded-md border border-[#29313b] bg-[#151a21] p-4 shadow-sm">
@@ -413,6 +421,20 @@ function CrossingsTimeline({ crossings, date, earthquakes, flashedCrossingId, on
           <span className="rounded-full border border-[#29313b] bg-[#1c232b] px-3 py-1 text-xs font-semibold text-[#e7eaee]">{t('crossings.count', { n: crossings.length })}</span>
         </div>
       </header>
+
+      {upcoming.length > 0 && (
+        <div className="mb-3 rounded-md border border-[#29313b] bg-[#0e1116] p-2">
+          <p className="mb-1.5 px-1 font-mono text-[10px] uppercase tracking-widest text-[#e0a028]">{t('crossings.riskTitle')}</p>
+          <div className="flex flex-wrap gap-2">
+            {upcoming.map((crossing) => (
+              <span key={crossing.id} className="rounded border border-[#29313b] bg-[#1c232b] px-2 py-1 font-mono text-[10px] text-[#e7eaee]">
+                {crossing.time} · {crossing.type === 'moon' ? t('map.moon') : t('map.antipode')} · {crossing.plateA} <span className="text-[#8b94a0]">±1h</span>
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
       {sorted.length === 0 ? (
         <p className="text-sm text-[#8b94a0]">{t('crossings.empty')}</p>
       ) : (

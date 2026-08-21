@@ -19,6 +19,20 @@ const PLATE_NAMES: Record<string, string> = {
 
 const nameFor = (code: string) => PLATE_NAMES[code] ?? (code || 'Límite')
 
+// Fronteras notables que Richard menciona por su nombre propio.
+const NOTABLE: Record<string, string> = {
+  'AF-SA': 'Dorsal Mesoatlántica',
+  'EU-NA': 'Dorsal Mesoatlántica',
+  'AF-NA': 'Dorsal Mesoatlántica',
+  'PA-AN': 'Dorsal Pacífico-Antártica',
+  'PA-NZ': 'Dorsal del Pacífico Oriental',
+  'PA-CO': 'Dorsal del Pacífico Oriental',
+  'NA-PA': 'Falla de San Andrés',
+  'NZ-SA': 'Fosa de Perú-Chile',
+}
+
+const notableFor = (a: string, b: string): string | null => NOTABLE[[a, b].sort().join('-')] ?? null
+
 type RawBoundary = {
   geometry?: { type?: string; coordinates?: [number, number][] }
   properties?: { PlateA?: string; PlateB?: string }
@@ -29,5 +43,5 @@ export const PLATE_BOUNDARIES: PlateSegment[] = (boundaries as unknown as { feat
   .map((feature) => {
     const a = feature.properties?.PlateA ?? ''
     const b = feature.properties?.PlateB ?? ''
-    return { name: `${nameFor(a)} – ${nameFor(b)}`, coordinates: feature.geometry!.coordinates! }
+    return { name: notableFor(a, b) ?? `${nameFor(a)} – ${nameFor(b)}`, coordinates: feature.geometry!.coordinates! }
   })
