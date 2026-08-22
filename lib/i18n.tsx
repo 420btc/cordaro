@@ -16,6 +16,9 @@ const es = {
   exportImage: 'Exportar imagen',
   loading: 'Cargando',
 
+  'calendar.nextDayTitle': 'Hoy ya es {date}',
+  'calendar.nextDayHint': 'Tu reloj marca el {today}; el calendario sigue en el {shown} por la ventana de 1 h del último cruce.',
+
   'hero.expand': 'Abrir banner',
   'hero.collapse': 'Cerrar banner',
 
@@ -376,6 +379,9 @@ const en: Record<keyof typeof es, string> = {
   howItWorks: 'How it works',
   exportImage: 'Export image',
   loading: 'Loading',
+
+  'calendar.nextDayTitle': "It's already {date}",
+  'calendar.nextDayHint': 'Your clock shows {today}; the calendar is still on {shown} due to the 1 h window of the last crossing.',
 
   'hero.expand': 'Open banner',
   'hero.collapse': 'Close banner',

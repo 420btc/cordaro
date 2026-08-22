@@ -1,7 +1,7 @@
 'use client'
 import { useState } from 'react'
-import { CalendarDays, Download, Info, Pause, Play, RefreshCw } from 'lucide-react'
-import { format } from 'date-fns'
+import { AlertTriangle, CalendarDays, Download, Info, Pause, Play, RefreshCw } from 'lucide-react'
+import { differenceInCalendarDays, format } from 'date-fns'
 import { useI18n, type Lang } from '@/lib/i18n'
 import { DateCalendar } from '@/components/DateCalendar'
 import { AccountMenu } from '@/components/AccountMenu'
@@ -50,6 +50,10 @@ function LanguageToggle() {
 export function DateControls(props: Props) {
   const { t } = useI18n()
   const [calendarOpen, setCalendarOpen] = useState(false)
+  const now = new Date()
+  const isNextDay = differenceInCalendarDays(now, props.date) >= 1
+  const userTodayLabel = format(now, 'dd/MM/yyyy')
+  const shownLabel = format(props.date, 'dd/MM/yyyy')
   return (
     <header className="flex flex-wrap items-center gap-x-5 gap-y-3 rounded-md border border-[#29313b] bg-[#151a21] px-4 py-3 shadow-sm">
       <div className="flex items-center gap-3">
@@ -63,6 +67,18 @@ export function DateControls(props: Props) {
       <div className="flex items-center gap-2 rounded border border-[#29313b] bg-[#1c232b] px-3 py-1.5">
         <CalendarDays className="size-4 text-[#e0a028]" />
         <div className="relative">
+          {isNextDay && (
+            <div className="absolute bottom-full left-0 z-[950] mb-1.5 flex flex-col items-center">
+              <div
+                title={t('calendar.nextDayHint', { today: userTodayLabel, shown: shownLabel })}
+                className="flex items-center gap-1.5 whitespace-nowrap rounded-md border border-[#e0a028]/70 bg-[#241a0d] px-2.5 py-1 text-[11px] font-semibold text-[#f0b84a] shadow-lg"
+              >
+                <AlertTriangle className="size-3.5 shrink-0" />
+                {t('calendar.nextDayTitle', { date: userTodayLabel })}
+              </div>
+              <div className="-mt-px size-0 border-x-[7px] border-t-[7px] border-x-transparent border-t-[#e0a028]/70" />
+            </div>
+          )}
           <button type="button" onClick={() => setCalendarOpen((value) => !value)} className="font-mono text-xs text-[#e7eaee] hover:text-[#e0a028]">{format(props.date, 'dd/MM/yyyy')}</button>
           {calendarOpen && (
             <>
