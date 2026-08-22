@@ -1,10 +1,12 @@
 'use client'
 import { useCallback, useEffect, useRef, useState } from 'react'
+import dynamic from 'next/dynamic'
 import { Binoculars, Loader2, LocateFixed, MessageCircle, Minus, Send, X } from 'lucide-react'
 import { format } from 'date-fns'
 import { useI18n } from '@/lib/i18n'
 import { useAuth } from '@/lib/auth-context'
-import { MiniMap } from '@/components/MiniMap'
+
+const MiniMap = dynamic(() => import('@/components/MiniMap').then((m) => m.MiniMap), { ssr: false, loading: () => <div className="h-full w-full bg-[#0e1116]" /> })
 
 type Msg = { id: number; name: string; body: string; kind: string; createdAt: string }
 
